@@ -1,0 +1,24 @@
+{
+  "name": "UOSM-Core-Config",
+  "version": "1.0.0",
+  "description": "Config files for UOSM-Core",
+  "keywords": "UOSupermileage, uOttawa, Core, Config",
+  "authors":
+  [
+    {
+      "name": "Jeremy Cote",
+      "email": "jcote034@uottawa.ca",
+      "url": "jeremycote.github.io/Portfolio",
+      "maintainer": true
+    }
+  ],
+  "frameworks": "*",
+  "platforms": "*",
+  "build": {
+    "libArchive": false,
+    "libLDFMode": "deep+",
+    "flags": [
+      "-I Inc"
+    ]
+  }
+}

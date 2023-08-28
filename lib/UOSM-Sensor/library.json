@@ -1,0 +1,27 @@
+{
+  "name": "UOSM-Sensor",
+  "version": "0.0.1",
+  "description": "Sensors for Telemetry",
+  "keywords": "UOSupermileage, uOttawa, Core, Sensor, Telemetry",
+  "authors":
+  [
+    {
+      "name": "Jeremy Cote",
+      "email": "jcote034@uottawa.ca",
+      "url": "jeremycote.github.io/Portfolio",
+      "maintainer": true
+    }
+  ],
+  "frameworks": "*",
+  "platforms": "*",
+  "build": {
+    "libArchive": true,
+    "flags": [
+      "-I Inc",
+      "-D UOSM_OBSERVABLES"
+    ]
+  },
+  "dependencies": {
+    "UOSM-Core": "*"
+  }
+}
