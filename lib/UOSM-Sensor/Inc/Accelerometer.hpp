@@ -24,7 +24,7 @@ public:
 
     Adafruit_LIS3DH handle;
     Accelerometer(uint8_t buffer_size): Sensor<accel_t>(buffer_size) {
-        handle = Adafruit_LIS3DH();
+        handle = Adafruit_LIS3DH(CS,MOSI, MISO, SCLK);
         setup(&handle);
     };
     void setup(Adafruit_LIS3DH& a_handle){
