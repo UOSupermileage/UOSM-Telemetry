@@ -2,12 +2,12 @@
 // Created by Jeremy Cote on 2023-08-27.
 //
 
-#include <unity.h>
+#include <gtest/gtest.h>
 #include "Sensor.hpp"
 
 class MockSensor : public Sensor<uint8_t> {
 private:
-    uint8_t nextMockValue;
+    uint8_t nextMockValue = 0;
 
 public:
     explicit MockSensor(uint8_t bufferSize) : Sensor(bufferSize) {
@@ -19,7 +19,7 @@ public:
     }
 
     void collect() override {
-        addValue(nextMockValue);
+        Sensor::add(nextMockValue);
     }
 
     void setNextMockValue(uint8_t value) {
@@ -27,50 +27,69 @@ public:
     }
 };
 
-void test_voltage_sensor_value_collection() {
-    // Create a mock sensor with a buffer size of 3
-    MockSensor sensor(2);
+TEST(SensorTests, CollectData) {
+    MockSensor sensor(5);
 
-    // Set next value that will be collected
-    sensor.setNextMockValue(5);
-
-    // Collect a value
+    sensor.setNextMockValue(10);
     sensor.collect();
 
-    // Check if the latest value is correct
-    TEST_ASSERT_EQUAL_INT(5, sensor.getValue());
+    EXPECT_EQ(sensor.get(), 10);
+
+    sensor.setNextMockValue(20);
+    sensor.collect();
+
+    EXPECT_EQ(sensor.get(), 20);
 }
 
-void test_voltage_sensor_latest_listener() {
-    // Create a mock sensor with a buffer size of 3
-    MockSensor sensor(2);
-
-    // Create a callback function
+TEST(SensorTests, Listener) {
+    MockSensor sensor(5);
     std::function<void(const uint8_t &)> callback = [](const uint8_t& newValue) {
         // Test the callback logic here
-        TEST_ASSERT_EQUAL_INT(3, newValue);
+        EXPECT_EQ(newValue, 3);
     };
 
-    // Set 3 as the next value to be collected
     sensor.setNextMockValue(3);
 
-    // Add a listener for the ObservedDataQueue
-//    ObserverToken token = sensor.addListenerForLatest(callback);
+    ObserverToken token = sensor.addListener(callback);
 
-    // Add a value to the sensor
     sensor.collect();
 
-    // Unregister the listener
-//    token.cancel();
+    token.cancel();
 }
 
-int main() {
-    UNITY_BEGIN();
+#if defined(ARDUINO)
+#include <Arduino.h>
 
-    RUN_TEST(test_voltage_sensor_value_collection);
-    RUN_TEST(test_voltage_sensor_latest_listener);
+void setup()
+{
+    // should be the same value as for the `test_speed` option in "platformio.ini"
+    // default value is test_speed=115200
+    Serial.begin(115200);
 
-    return UNITY_END();
+    ::testing::InitGoogleTest();
+    // if you plan to use GMock, replace the line above with
+    // ::testing::InitGoogleMock();
 }
 
-//void loop() {}
+void loop()
+{
+    // Run tests
+    if (RUN_ALL_TESTS()) {}
+
+    // sleep for 1 sec
+    delay(1000);
+}
+
+#else
+int main(int argc, char **argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    // if you plan to use GMock, replace the line above with
+    // ::testing::InitGoogleMock(&argc, argv);
+
+    if (RUN_ALL_TESTS()) {}
+
+    // Always return zero-code and allow PlatformIO to parse results
+    return 0;
+}
+#endif

@@ -7,41 +7,43 @@
 
 #include "ObservedDataQueue.hpp"
 #include "Collector.hpp"
-#include "ValueStore.hpp"
 
 template<typename T>
-class Sensor: public Collector, public ValueStore<T>, public ObservedObject<ValueStore<T>> {
+class Sensor: public Collector, public Observable<T> {
 private:
-    DataQueue<T> data;
+    ObservedObject<DataQueue<T>>* data;
 protected:
-    void addValue(T value) {
-        data.add(value);
+    void add(T value) {
+        data->getMutable().add(value);
+        data->publish();
     }
 public:
     /**
      *  Create a new sensor.
      * @param bufferSize How many items of type T to store
      */
-    explicit Sensor(uint8_t bufferSize) : data(bufferSize), ValueStore<T>(), ObservedObject<ValueStore<T>>(static_cast<ValueStore<T>*>(this), false) {
-
+    explicit Sensor(uint8_t bufferSize) {
+        auto* queue = new DataQueue<T>(10);
+        data = new ObservedObject<DataQueue<T>>(queue, true);
     }
 
-    virtual ~Sensor() = default;
+    virtual ~Sensor() {
+        delete data;
+    }
+
+    // Observable Protocol
 
     /**
      * @return the newest value added to the collection.
      */
-    T getValue() {
-        return data.getLatestValue();
+    T& get() const override {
+        return data->get().getLatestValue();
     }
 
-    /**
-     * Collect data from sensor and add as new datapoint in it's internal buffer.
-     */
-    virtual void collect() = 0;
-
-    ObserverToken addListener(std::function<void(const ObservedDataQueue<Sensor<T>>&)> callback) {
-        return ObservedObject<Sensor<T>>::addListener(callback);
+    ObserverToken addListener(std::function<void(const T&)> callback) override {
+        return data->addListener([callback](const DataQueue<T>& q) {
+            callback(q.getLatestValue());
+        });
     }
 };
 
