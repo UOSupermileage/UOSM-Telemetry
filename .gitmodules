@@ -1,3 +1,12 @@
 [submodule "lib/UOSM-Core"]
 	path = lib/UOSM-Core
 	url = git@github.com:UOSupermileage/UOSM-Core.git
+[submodule "Adafruit_BusIO"]
+	path = Adafruit_BusIO
+	url = https://github.com/adafruit/Adafruit_BusIO.git
+[submodule "Adafruit_Sensor"]
+	path = Adafruit_Sensor
+	url = https://github.com/adafruit/Adafruit_Sensor.git
+[submodule "Adafruit_LIS3DH"]
+	path = Adafruit_LIS3DH
+	url = https://github.com/adafruit/Adafruit_LIS3DH.git
