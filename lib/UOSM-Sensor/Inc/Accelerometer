@@ -44,8 +44,8 @@ public:
 
 
     virtual void collect() override {
-        handle.read();
         accel_t acceleration;
+        handle.read();
         sensors_event_t an_event;
         handle.getEvent(&an_event);
         acceleration.accel_x = an_event.acceleration.x;
