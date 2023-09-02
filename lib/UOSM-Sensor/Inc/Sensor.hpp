@@ -22,7 +22,7 @@ public:
      *  Create a new sensor.
      * @param bufferSize How many items of type T to store
      */
-    explicit Sensor(uint8_t bufferSize) {
+    explicit Sensor(uint8_t bufferSize): Collector() {
         auto* queue = new DataQueue<T>(10);
         data = new ObservedObject<DataQueue<T>>(queue, true);
     }
