@@ -2,6 +2,9 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Adafruit_BusIO" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Adafruit_LIS3DH" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Adafruit_Sensor" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/lib/UOSM-Core" vcs="Git" />
   </component>
 </project>
