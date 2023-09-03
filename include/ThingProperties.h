@@ -15,6 +15,9 @@ const char PASS[]               = "";    // Network password (use for WPA, or us
 const char DEVICE_KEY[]  = "";    // Secret device password
 
 float battery_Voltage;
+float new_accel_x; 
+float new_accel_y; 
+float new_accel_z;
 
 void initProperties(){
 
