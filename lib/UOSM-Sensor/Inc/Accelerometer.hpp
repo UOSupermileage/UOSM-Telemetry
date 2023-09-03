@@ -3,10 +3,6 @@
 //
 #include "Sensor.hpp"
 #include "ApplicationTypes.h"
-#include "../Adafruit_LIS3DH/Adafruit_LIS3DH.h"
-#include "../Adafruit_LIS3DH/Adafruit_LIS3DH.cpp"
-#include "../Adafruit_BusIO/Adafruit_BusIO_Register.h"
-#include "../Adafruit_Sensor/Adafruit_Sensor.h"
 #include "../SparkFun_LIS3DH_Arduino_Library-master/SparkFun_LIS3DH_Arduino_Library-master/src_files/SparkFunLIS3DH.h"
 #include "../SparkFun_LIS3DH_Arduino_Library-master/SparkFun_LIS3DH_Arduino_Library-master/src_files/SparkFunLIS3DH.cpp" 
 #include "SPI.h"
@@ -18,6 +14,7 @@
 #define CS 5
 #define G 2
 #define SAMPLE_RATE 400
+#define Address 0x18
 
 
 
@@ -66,14 +63,7 @@ public:
         acceleration.accel_y = readDatay*9.81; 
         acceleration.accel_z = readDataz*9.81; 
 
-        /*handle.read();
-        handle.getEvent(&an_event);
-        acceleration.accel_x = an_event.acceleration.x;
-        acceleration.accel_y = an_event.acceleration.y;
-        acceleration.accel_z = an_event.acceleration.z;
-        acceleration.x = handle.x;
-        acceleration.y = handle.y;
-        acceleration.z = handle.z;*/
+       
         add(acceleration); 
 
     }
