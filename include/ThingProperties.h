@@ -31,6 +31,12 @@ void updateBatteryVoltage(float voltage) {
     battery_Voltage = voltage;
 }
 
+void updateAcceleration(accel_t acceleration_struct){ 
+    new_accel_x = acceleration_struct.accel_x; 
+    new_accel_y = acceleration_struct.accel_y; 
+    new_accel_z = acceleration_struct.accel_z; 
+}
+
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
 
 #endif //UOSM_TELEMETRY_THINGPROPERTIES_H
