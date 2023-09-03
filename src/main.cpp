@@ -1,6 +1,6 @@
 #include "VoltageSensor.hpp"
 #include "Accelerometer.hpp"
-#include "AIotvarcollect.h"
+#include "ThingProperties.h"
 #ifdef ESP32
 
 #include <Arduino.h>
@@ -76,7 +76,7 @@ void setup() {
     accelSensorTask = new PollingSensorTask<accel_t>(accelSensor,200,"T_AccelSensor",1280*100,5);
 
     initProperties();
-    ArduinoCloud.begin(AIoTPreferredConnection);
+    ArduinoCloud.begin(ArduinoIoTPreferredConnection);
 
     Serial.println("Begin Connection");
 
