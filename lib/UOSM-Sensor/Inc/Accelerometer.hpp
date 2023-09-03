@@ -26,7 +26,7 @@ public:
 
     accel_t acceleration; 
     LIS3DH handle = LIS3DH(SPI_MODE,CS);    
-    // byte WriteData = 0; 
+   
     float readDatax, readDatay, readDataz = 0; 
     explicit Accelerometer(uint8_t buffer_size): Sensor<accel_t>(buffer_size) {
         
@@ -34,23 +34,10 @@ public:
         handle.settings.accelRange = G; 
         handle.settings.accelSampleRate = SAMPLE_RATE; 
         
-      //  handle.readRegister(&readData,LIS3DH_WHO_AM_I); 
+     
         
     }; 
-   /* void setup(Adafruit_LIS3DH* _a){
-        try{
-            if (! _a ->begin()){ 
-                throw("Couldn't start the accelerometer.");
-            }
-            _a->setDataRate(LIS3DH_DATARATE_10_HZ);
-            _a->setRange(LIS3DH_RANGE_2_G);
-            Serial.println("Initialization Successful!");
-        }
-
-        catch(error_t){
-            printf("Error has occured.");
-        }
-    }*/
+   
 
 
 
