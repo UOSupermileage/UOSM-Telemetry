@@ -3,8 +3,7 @@
 //
 #include "Sensor.hpp"
 #include "ApplicationTypes.h"
-#include "../SparkFun_LIS3DH_Arduino_Library-master/SparkFun_LIS3DH_Arduino_Library-master/src_files/SparkFunLIS3DH.h"
-#include "../SparkFun_LIS3DH_Arduino_Library-master/SparkFun_LIS3DH_Arduino_Library-master/src_files/SparkFunLIS3DH.cpp" 
+#include "SparkFunLIS3DH.h"
 #include "SPI.h"
 
 
@@ -12,9 +11,8 @@
 #define MOSI 23
 #define SCLK 18
 #define CS 5
-#define G 2
+#define G_VAL 2
 #define SAMPLE_RATE 400
-#define Address 0x18
 
 
 
@@ -26,18 +24,18 @@ public:
 
     accel_t acceleration; 
     LIS3DH handle = LIS3DH(SPI_MODE,CS);    
-   
+
     float readDatax, readDatay, readDataz = 0; 
     explicit Accelerometer(uint8_t buffer_size): Sensor<accel_t>(buffer_size) {
         
         handle.begin(); 
-        handle.settings.accelRange = G; 
+        handle.settings.accelRange = G_VAL;
         handle.settings.accelSampleRate = SAMPLE_RATE; 
         
-     
+
         
     }; 
-   
+
 
 
 
@@ -50,7 +48,7 @@ public:
         acceleration.accel_y = readDatay*9.81; 
         acceleration.accel_z = readDataz*9.81; 
 
-       
+
         add(acceleration); 
 
     }

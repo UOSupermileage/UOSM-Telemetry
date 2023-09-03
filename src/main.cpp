@@ -1,6 +1,5 @@
 #include "VoltageSensor.hpp"
 #include "Accelerometer.hpp"
-#include "ThingProperties.h"
 #ifdef ESP32
 
 #include <Arduino.h>
@@ -9,7 +8,7 @@
 #include "ThingProperties.h"
 #include "Conversions.h"
 
-#include <SoftwareSerial.h>
+#include "SoftwareSerial.h"
 
 // 9 = RX, 10 = TX
 SoftwareSerial fonaSerial(9, 10, false, 256);
@@ -21,7 +20,7 @@ SoftwareSerial fonaSerial(9, 10, false, 256);
 #define TINY_GSM_MODEM_SIM808
 
 
-#include <TinyGsmClient.h>
+#include "TinyGSMClient.h"
 
 //#define SerialMon Serial
 #define SerialAT fonaSerial
@@ -86,13 +85,6 @@ void setup() {
 }
 
 void loop() {
-    Serial.print("Main Loop...\n");
-    vTaskDelay(100);
-    //Serial.printf("Value %d\n", voltageSensor->get());
-    // accelSensor->collect();
-    // Serial.printf("Value Accelerometer X: %f\n", accelSensor->get().accel_x);
-    // Serial.printf("Value Accelerometer Y: %f\n", accelSensor->get().accel_y);
-    // Serial.printf("Value Accelerometer Z: %f\n", accelSensor->get().accel_z);
     ArduinoCloud.update();
 
 }
