@@ -10,3 +10,6 @@
 [submodule "Adafruit_LIS3DH"]
 	path = Adafruit_LIS3DH
 	url = https://github.com/adafruit/Adafruit_LIS3DH.git
+[submodule "TinyGSM"]
+	path = TinyGSM
+	url = https://github.com/vshymanskyy/TinyGSM.git
