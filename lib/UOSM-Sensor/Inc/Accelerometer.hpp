@@ -11,7 +11,8 @@
 #define MOSI 23
 #define SCLK 18
 #define CS 5
-#define G_VAL 2
+#define G_RANGE 2
+#define G 9.81
 #define SAMPLE_RATE 400
 
 
@@ -29,7 +30,7 @@ public:
     explicit Accelerometer(uint8_t buffer_size): Sensor<accel_t>(buffer_size) {
         
         handle.begin(); 
-        handle.settings.accelRange = G_VAL;
+        handle.settings.accelRange = G_RANGE;
         handle.settings.accelSampleRate = SAMPLE_RATE; 
         
 
@@ -44,9 +45,9 @@ public:
         readDatax = handle.readFloatAccelX(); 
         readDatay = handle.readFloatAccelY(); 
         readDataz = handle.readFloatAccelZ(); 
-        acceleration.accel_x = readDatax*9.81; 
-        acceleration.accel_y = readDatay*9.81; 
-        acceleration.accel_z = readDataz*9.81; 
+        acceleration.accel_x = readDatax*G; 
+        acceleration.accel_y = readDatay*G; 
+        acceleration.accel_z = readDataz*G; 
 
 
         add(acceleration); 
