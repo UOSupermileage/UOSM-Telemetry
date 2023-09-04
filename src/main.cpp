@@ -44,6 +44,12 @@ VoltageSensor* voltageSensor;
 
 PollingSensorTask<voltage_t>* voltageSensorTask;
 
+TaskHandle_t loggerHandle = NULL;
+
+void loggerTask() {
+    vTaskDelay(500);
+}
+
 void setup() {
    Serial.begin(115200);
    SerialAT.begin(9600);
@@ -79,6 +85,8 @@ void setup() {
    // TODO: Note that voltageSensor will throw an exception if collect is not called before get(). See if we can apply RAII
 
    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 5, 5);
+
+    xTaskCreate(loggerTask, "LoggerTask", 1024 * 2, nullptr, 3, &loggerHandle);
 }
 
 void loop() {
