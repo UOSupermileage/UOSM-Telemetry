@@ -38,14 +38,14 @@ TinyGsmClient client(modem);
 #define DEFAULT_BUFFER_SIZE 10
 
 VoltageSensor* voltageSensor;
-Accelerometer* accelSensor;
+Accelerometer* accelerationSensor;
 
 PollingSensorTask<voltage_t>* voltageSensorTask;
-PollingSensorTask<accel_t>* accelSensorTask;
+PollingSensorTask<acceleration_t>* accelerationSensorTask;
 
 TaskHandle_t loggerHandle = NULL;
 
-void loggerTask() {
+void loggerTask(void* args) {
     vTaskDelay(500);
 }
 
@@ -64,21 +64,21 @@ void setup() {
 
     Serial.println("Connected!");
     Serial.printf("Minimal stack size %d\n", configMINIMAL_STACK_SIZE);
+
     voltageSensor = new VoltageSensor(DEFAULT_BUFFER_SIZE);
-    accelSensor = new Accelerometer(DEFAULT_BUFFER_SIZE);
+    accelerationSensor = new Accelerometer(DEFAULT_BUFFER_SIZE);
+
     voltageSensor->addListener([](const voltage_t& newValue) {
         updateBatteryVoltage(convertVoltageToFloat(newValue));
     });
 
-        accelSensor->addListener([](const accel_t& newValue){
-            updateAcceleration(newValue);
-        });
+    accelerationSensor->addListener([](const acceleration_t & newValue){
+        updateAcceleration(newValue);
+    });
 
-    // })
-    // TODO: Note that voltageSensor will throw an exception if collect is not called before get(). See if we can apply RAII
-
+    // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
     voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 12800 * 100, 5);
-    accelSensorTask = new PollingSensorTask<accel_t>(accelSensor,200,"T_AccelSensor",1280*100,5);
+    accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1280 * 100, 5);
 
     initProperties();
     ArduinoCloud.begin(ArduinoIoTPreferredConnection);

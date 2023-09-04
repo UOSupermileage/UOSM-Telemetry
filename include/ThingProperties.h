@@ -14,10 +14,11 @@ const char SSID[]               = "";    // Network SSID (name)
 const char PASS[]               = "";    // Network password (use for WPA, or use as key for WEP)
 const char DEVICE_KEY[]  = "";    // Secret device password
 
+// Name of variables is important. They map to definitions in our IOT Cloud Dashboard
 float battery_Voltage;
-float new_accel_x; 
-float new_accel_y; 
-float new_accel_z;
+float acceleration_x;
+float acceleration_y;
+float acceleration_z;
 
 void initProperties(){
 
@@ -31,10 +32,10 @@ void updateBatteryVoltage(float voltage) {
     battery_Voltage = voltage;
 }
 
-void updateAcceleration(accel_t acceleration_struct){ 
-    new_accel_x = acceleration_struct.accel_x; 
-    new_accel_y = acceleration_struct.accel_y; 
-    new_accel_z = acceleration_struct.accel_z; 
+void updateAcceleration(acceleration_t acceleration){
+    acceleration_x = acceleration.x;
+    acceleration_y = acceleration.y;
+    acceleration_z = acceleration.z;
 }
 
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);

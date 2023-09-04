@@ -6,52 +6,31 @@
 #include "SparkFunLIS3DH.h"
 #include "SPI.h"
 
-
-#define MISO 19
-#define MOSI 23
-#define SCLK 18
 #define CS 5
 #define G_RANGE 2
-#define G 9.81
+#define GRAVITY 9.81f
 #define SAMPLE_RATE 400
 
-
-
-
-
-class Accelerometer: public Sensor<accel_t>{
+class Accelerometer: public Sensor<acceleration_t>{
+private:
+    LIS3DH handle = LIS3DH(SPI_MODE,CS);
 
 public:
-
-    accel_t acceleration; 
-    LIS3DH handle = LIS3DH(SPI_MODE,CS);    
-
-    float readDatax, readDatay, readDataz = 0; 
-    explicit Accelerometer(uint8_t buffer_size): Sensor<accel_t>(buffer_size) {
-        
-        handle.begin(); 
+    explicit Accelerometer(uint8_t buffer_size): Sensor<acceleration_t>(buffer_size) {
         handle.settings.accelRange = G_RANGE;
-        handle.settings.accelSampleRate = SAMPLE_RATE; 
-        
+        handle.settings.accelSampleRate = SAMPLE_RATE;
 
-        
-    }; 
-
-
-
+        // Start LIS3DH module with applied settings
+        handle.begin();
+    };
 
     void collect() override {
-        Serial.printf("Bonjour");
-        readDatax = handle.readFloatAccelX(); 
-        readDatay = handle.readFloatAccelY(); 
-        readDataz = handle.readFloatAccelZ(); 
-        acceleration.accel_x = readDatax*G; 
-        acceleration.accel_y = readDatay*G; 
-        acceleration.accel_z = readDataz*G; 
+        acceleration_t acceleration;
 
+        acceleration.x = handle.readFloatAccelX() * GRAVITY;
+        acceleration.y = handle.readFloatAccelY() * GRAVITY;
+        acceleration.z = handle.readFloatAccelZ() * GRAVITY;
 
-        add(acceleration); 
-
+        add(acceleration);
     }
-
 };
