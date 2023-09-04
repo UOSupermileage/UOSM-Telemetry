@@ -15,6 +15,9 @@ const char PASS[]               = "";    // Network password (use for WPA, or us
 const char DEVICE_KEY[]  = "";    // Secret device password
 
 float battery_Voltage;
+float new_accel_x; 
+float new_accel_y; 
+float new_accel_z;
 
 void initProperties(){
 
@@ -26,6 +29,12 @@ void initProperties(){
 
 void updateBatteryVoltage(float voltage) {
     battery_Voltage = voltage;
+}
+
+void updateAcceleration(accel_t acceleration_struct){ 
+    new_accel_x = acceleration_struct.accel_x; 
+    new_accel_y = acceleration_struct.accel_y; 
+    new_accel_z = acceleration_struct.accel_z; 
 }
 
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
