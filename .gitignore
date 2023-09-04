@@ -1,2 +1,8 @@
 .pio
 .DS_Store
+
+.vscode
+!.vscode/extensions.json
+
+.idea
+!.idea/externalDependencies.xml
