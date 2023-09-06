@@ -1,5 +1,6 @@
 #include "VoltageSensor.hpp"
 #include "Accelerometer.hpp"
+ #include "Pressure_Sensor.hpp"
 #ifdef ESP32
 
 #include <Arduino.h>
@@ -39,9 +40,14 @@ TinyGsmClient client(modem);
 
 VoltageSensor* voltageSensor;
 Accelerometer* accelerationSensor;
+PressureSensor* pressureSensor;
+
 
 PollingSensorTask<voltage_t>* voltageSensorTask;
 PollingSensorTask<acceleration_t>* accelerationSensorTask;
+PollingSensorTask<pressure_t>* pressureSensorTask;
+
+
 
 TaskHandle_t loggerHandle = NULL;
 
@@ -67,6 +73,7 @@ void setup() {
 
     voltageSensor = new VoltageSensor(DEFAULT_BUFFER_SIZE);
     accelerationSensor = new Accelerometer(DEFAULT_BUFFER_SIZE);
+    pressureSensor = new PressureSensor(DEFAULT_BUFFER_SIZE);
 
     voltageSensor->addListener([](const voltage_t& newValue) {
         updateBatteryVoltage(convertVoltageToFloat(newValue));
@@ -76,10 +83,14 @@ void setup() {
         updateAcceleration(newValue);
     });
 
+    pressureSensor->addListener([](const pressure_t & newValue){
+        updatePressure(newValue);
+    });
+
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
     voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 12800 * 100, 5);
     accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1280 * 100, 5);
-
+    pressureSensorTask = new PollingSensorTask<pressure_t>(pressureSensor, 200, "T_PressureSensor", 1280 * 100, 5);
     initProperties();
     ArduinoCloud.begin(ArduinoIoTPreferredConnection);
 
