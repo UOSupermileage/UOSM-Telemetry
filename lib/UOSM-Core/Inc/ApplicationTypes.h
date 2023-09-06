@@ -78,6 +78,12 @@ typedef struct {
     uint8_t data[8];
 } iCommsMessage_t;
 
+typedef struct {
+    float x;
+    float y;
+    float z;
+} acceleration_t;
+
 #ifdef __cplusplus
 }
 #endif
