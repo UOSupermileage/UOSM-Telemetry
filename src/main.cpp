@@ -106,6 +106,7 @@ void setup() {
 }
 
 void loop() {
+    Serial.printf("Accelerometer: %d", acceleration_x);
     ArduinoCloud.update();
 
 }

@@ -7,6 +7,7 @@
 #include "SPI.h"
 #include "Wire.h"
 #include <Arduino.h>
+#include "exception"
 
 
 
@@ -21,8 +22,7 @@ class PressureSensor:public Sensor<pressure_t>{
         Wire.begin();
 
         if (!sensor_pres.begin()) {
-        Serial.println("failed to initialize pressure sensor!");
-        while (true) delay(100);
+        throw std::runtime_error("Failed to initialize pressure sensor!");
         }
 
         sensor_pres.dumpCoefficients(Serial);

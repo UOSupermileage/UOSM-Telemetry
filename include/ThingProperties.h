@@ -19,8 +19,8 @@ float battery_Voltage;
 float acceleration_x;
 float acceleration_y;
 float acceleration_z;
-double pressure_2;
-double temp_2;
+double pressure;
+double temp;
 
 
 void initProperties(){
@@ -41,9 +41,9 @@ void updateAcceleration(acceleration_t acceleration){
     acceleration_z = acceleration.z;
 }
 
-void updatePressure(pressure_t pressure){
-    pressure_2 = pressure.pressure;
-    temp_2 = pressure.temp;
+void updatePressure(pressure_t sensor){
+    pressure = sensor.pressure;
+    temp = sensor.temp;
 
 }
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
