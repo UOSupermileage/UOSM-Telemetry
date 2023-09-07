@@ -21,6 +21,9 @@ float battery_Voltage;
 float acceleration_x;
 float acceleration_y;
 float acceleration_z;
+double pressure;
+double temp;
+
 
 // GPS
 float latitude;
@@ -45,6 +48,12 @@ void updateAcceleration(acceleration_t acceleration){
     acceleration_x = acceleration.x;
     acceleration_y = acceleration.y;
     acceleration_z = acceleration.z;
+}
+
+void updatePressure(pressure_t sensor){
+    pressure = sensor.pressure;
+    temp = sensor.temp;
+
 }
 
 void updateGPS(gps_coordinate_t coordinate) {

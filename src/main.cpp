@@ -1,5 +1,6 @@
 #include "VoltageSensor.hpp"
 #include "Accelerometer.hpp"
+ #include "Pressure_Sensor.hpp"
 #ifdef ESP32
 
 #include <Arduino.h>
@@ -20,10 +21,12 @@ Fona3G* fona;
 
 VoltageSensor* voltageSensor;
 Accelerometer* accelerationSensor;
+PressureSensor* pressureSensor;
 GPSSensor* gpsSensor;
 
 PollingSensorTask<voltage_t>* voltageSensorTask;
 PollingSensorTask<acceleration_t>* accelerationSensorTask;
+PollingSensorTask<pressure_t>* pressureSensorTask;
 PollingSensorTask<gps_coordinate_t>* gpsSensorTask;
 
 TaskHandle_t loggerHandle = NULL;
@@ -40,6 +43,7 @@ void setup() {
 
     voltageSensor = new VoltageSensor(DEFAULT_BUFFER_SIZE);
     accelerationSensor = new Accelerometer(DEFAULT_BUFFER_SIZE);
+    pressureSensor = new PressureSensor(DEFAULT_BUFFER_SIZE);
     gpsSensor = new GPSSensor(fona, DEFAULT_BUFFER_SIZE);
 
     voltageSensor->addListener([](const voltage_t& newValue) {
@@ -50,6 +54,10 @@ void setup() {
         updateAcceleration(newValue);
     });
 
+    pressureSensor->addListener([](const pressure_t & newValue){
+        updatePressure(newValue);
+    });
+
     gpsSensor->addListener([](const gps_coordinate_t& newValue) {
         updateGPS(newValue);
     });
@@ -57,6 +65,7 @@ void setup() {
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
     voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 20, 5);
     accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 20, 5);
+    pressureSensorTask = new PollingSensorTask<pressure_t>(pressureSensor, 200, "T_PressureSensor", 1280 * 100, 5);  
     gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 20, 5);
 
     initProperties();
@@ -74,6 +83,7 @@ void setup() {
 }
 
 void loop() {
+    
     ArduinoCloud.update();
 
 }
