@@ -84,6 +84,14 @@ typedef struct {
     float z;
 } acceleration_t;
 
+typedef struct {
+    float latitude;
+    float longitude;
+    float speed_kmh;
+    float heading;
+    float altitude;
+} gps_coordinate_t;
+
 #ifdef __cplusplus
 }
 #endif
