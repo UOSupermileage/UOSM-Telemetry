@@ -17,15 +17,16 @@ const char DEVICE_KEY[]  = "";    // Secret device password
 // Name of variables is important. They map to definitions in our IOT Cloud Dashboard
 float battery_Voltage;
 
-// Acceleration
+// Acceleration Sensor
 float acceleration_x;
 float acceleration_y;
 float acceleration_z;
+
+// Pressure Sensor
 double pressure;
 double temp;
 
-
-// GPS
+// GPS Sensor
 float latitude;
 float longitude;
 float gps_speed; // in km / h
@@ -33,7 +34,6 @@ float heading;
 float altitude;
 
 void initProperties(){
-
     ArduinoCloud.setBoardId(DEVICE_LOGIN_NAME);
     ArduinoCloud.setSecretDeviceKey(DEVICE_KEY);
 
@@ -50,10 +50,9 @@ void updateAcceleration(acceleration_t acceleration){
     acceleration_z = acceleration.z;
 }
 
-void updatePressure(pressure_t sensor){
-    pressure = sensor.pressure;
-    temp = sensor.temp;
-
+void updatePressure(pressure_t p){
+    pressure = p.pressure;
+    temp = p.temp;
 }
 
 void updateGPS(gps_coordinate_t coordinate) {

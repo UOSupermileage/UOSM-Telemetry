@@ -92,6 +92,11 @@ typedef struct {
     float altitude;
 } gps_coordinate_t;
 
+typedef struct {
+    double pressure;
+    double temp;
+} pressure_t;
+
 #ifdef __cplusplus
 }
 #endif

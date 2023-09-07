@@ -11,14 +11,11 @@
 
 
 
-class PressureSensor:public Sensor<pressure_t>{
-
-    public: 
-    
+class PressureSensor: public Sensor<pressure_t> {
+private:
     MS5525DSO sensor_pres = MS5525DSO(pp005GS); //Need to look into the input pp005GS
-
-    explicit PressureSensor(uint8_t buffer_size):Sensor<pressure_t>(buffer_size){
-        
+public:
+    explicit PressureSensor(uint8_t buffer_size): Sensor<pressure_t>(buffer_size) {
         Wire.begin();
 
         if (!sensor_pres.begin()) {
@@ -29,13 +26,8 @@ class PressureSensor:public Sensor<pressure_t>{
     }
 
     void collect() override{
-
-        pressure_t struct_pressure;
-        sensor_pres.readPressureAndTemperature(&struct_pressure.pressure, &struct_pressure.temp);
-        add(struct_pressure);
+        pressure_t p;
+        sensor_pres.readPressureAndTemperature(&p.pressure, &p.temp);
+        add(p);
     }
-
-
-
-
 };
