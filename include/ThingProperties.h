@@ -17,8 +17,17 @@ const char DEVICE_KEY[]  = "";    // Secret device password
 // Name of variables is important. They map to definitions in our IOT Cloud Dashboard
 float battery_Voltage;
 
-acceleration_t acceleration;
-gps_coordinate_t coordinates;
+// Acceleration
+float acceleration_x;
+float acceleration_y;
+float acceleration_z;
+
+// GPS
+float latitude;
+float longitude;
+float gps_speed; // in km / h
+float heading;
+float altitude;
 
 void initProperties(){
 
@@ -32,14 +41,19 @@ void updateBatteryVoltage(float voltage) {
     battery_Voltage = voltage;
 }
 
-void updateAcceleration(acceleration_t a){
-    acceleration = a;
+void updateAcceleration(acceleration_t acceleration){
+    acceleration_x = acceleration.x;
+    acceleration_y = acceleration.y;
+    acceleration_z = acceleration.z;
 }
 
-void updateGPS(gps_coordinate_t c) {
-    coordinates = c;
+void updateGPS(gps_coordinate_t coordinate) {
+    latitude = coordinate.latitude;
+    longitude = coordinate.longitude;
+    gps_speed = coordinate.speed_kmh;
+    heading = coordinate.heading;
+    altitude = coordinate.altitude;
 }
-
 
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
 
