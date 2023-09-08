@@ -10,6 +10,16 @@
 #include "Conversions.h"
 #include "GPSSensor.hpp"
 #include "InternalCommsModule.h"
+#include "LoggerTask.hpp"
+
+#define SD_CS_PIN 0
+#define SD_SIGNAL_LIGHT_PIN 0
+#define SD_DETECT_PIN 0
+#define SD_LOG_BUTTON_PIN 0
+#define SD_LOGGER_STACK_SIZE 10240
+#define SD_LOGGER_PRIORITY 5
+#define SD_LOGGING_RATE 200
+
 
 #define FONA_TX 10
 #define FONA_RX 9
@@ -30,14 +40,7 @@ PollingSensorTask<acceleration_t>* accelerationSensorTask;
 PollingSensorTask<pressure_t>* pressureSensorTask;
 PollingSensorTask<gps_coordinate_t>* gpsSensorTask;
 
-TaskHandle_t loggerHandle = NULL;
 TaskHandle_t canHandle = NULL;
-
-[[noreturn]] void loggerTask(void* args) {
-    while (true) {
-        vTaskDelay(500);
-    }
-}
 
 [[noreturn]] void canTask(void* args) {
     result_t isInitialized = RESULT_FAIL;
@@ -80,6 +83,22 @@ void setup() {
         updateGPS(newValue);
     });
 
+    LoggerInit(
+            SD_CS_PIN,
+            SD_SIGNAL_LIGHT_PIN,
+            SD_DETECT_PIN,
+            SD_LOG_BUTTON_PIN,
+            []() {
+                return "0,0,0,0,0,0,0,0,0,0";
+            },
+            "timestamp,throttle,speed,rpm,current,voltage,throttleTooHigh,motorInitializing,clockState,lastDeadman",
+            SD_LOGGER_STACK_SIZE,
+            SD_LOGGER_PRIORITY,
+            SD_LOGGING_RATE
+    );
+
+    xTaskCreate(canTask, "CanTask", 1024 * 10, nullptr, 3, &canHandle);
+
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
     voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, 5);
     accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 10, 5);
@@ -88,23 +107,12 @@ void setup() {
 
     initProperties();
     ArduinoCloud.begin(ArduinoIoTPreferredConnection);
-
-    Serial.println("Begin Connection");
-
     setDebugMessageLevel(2);
     ArduinoCloud.printDebugInfo();
-
-   // TODO: Note that voltageSensor will throw an exception if collect is not called before get(). See if we can apply RAII
-    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 5, 5);
-
-    xTaskCreate(loggerTask, "LoggerTask", 1024 * 10, nullptr, 3, &loggerHandle);
-    xTaskCreate(canTask, "CanTask", 1024 * 10, nullptr, 3, &canHandle);
 }
 
 void loop() {
-    
     ArduinoCloud.update();
-
 }
 
 #else
