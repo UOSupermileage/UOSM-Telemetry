@@ -9,6 +9,7 @@
 #include "ThingProperties.h"
 #include "Conversions.h"
 #include "GPSSensor.hpp"
+#include "InternalCommsModule.h"
 
 #define FONA_TX 10
 #define FONA_RX 9
@@ -30,9 +31,26 @@ PollingSensorTask<pressure_t>* pressureSensorTask;
 PollingSensorTask<gps_coordinate_t>* gpsSensorTask;
 
 TaskHandle_t loggerHandle = NULL;
+TaskHandle_t canHandle = NULL;
 
-void loggerTask(void* args) {
-    vTaskDelay(500);
+[[noreturn]] void loggerTask(void* args) {
+    while (true) {
+        vTaskDelay(500);
+    }
+}
+
+[[noreturn]] void canTask(void* args) {
+    result_t isInitialized = RESULT_FAIL;
+
+    while (true) {
+        if (isInitialized == RESULT_FAIL) {
+            isInitialized = IComms_Init();
+        } else {
+            IComms_PeriodicReceive();
+        }
+
+        vTaskDelay(100);
+    }
 }
 
 void setup() {
@@ -63,10 +81,10 @@ void setup() {
     });
 
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
-    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 20, 5);
-    accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 20, 5);
-    pressureSensorTask = new PollingSensorTask<pressure_t>(pressureSensor, 200, "T_PressureSensor", 1280 * 100, 5);  
-    gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 20, 5);
+    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, 5);
+    accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 10, 5);
+    pressureSensorTask = new PollingSensorTask<pressure_t>(pressureSensor, 200, "T_PressureSensor", 1024 * 10, 5);
+    gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, 5);
 
     initProperties();
     ArduinoCloud.begin(ArduinoIoTPreferredConnection);
@@ -79,7 +97,8 @@ void setup() {
    // TODO: Note that voltageSensor will throw an exception if collect is not called before get(). See if we can apply RAII
     voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 5, 5);
 
-    xTaskCreate(loggerTask, "LoggerTask", 1024 * 2, nullptr, 3, &loggerHandle);
+    xTaskCreate(loggerTask, "LoggerTask", 1024 * 10, nullptr, 3, &loggerHandle);
+    xTaskCreate(canTask, "CanTask", 1024 * 10, nullptr, 3, &canHandle);
 }
 
 void loop() {
