@@ -33,6 +33,11 @@ float gps_speed; // in km / h
 float heading;
 float altitude;
 
+// CAN Sensor
+velocity_t rpm;
+speed_t speed;
+percentage_t throttle;
+
 void initProperties(){
     ArduinoCloud.setBoardId(DEVICE_LOGIN_NAME);
     ArduinoCloud.setSecretDeviceKey(DEVICE_KEY);
@@ -61,6 +66,18 @@ void updateGPS(gps_coordinate_t coordinate) {
     gps_speed = coordinate.speed_kmh;
     heading = coordinate.heading;
     altitude = coordinate.altitude;
+}
+
+void updateRPM(velocity_t r) {
+    rpm = r;
+}
+
+void updateSpeed(speed_t s) {
+    speed = s;
+}
+
+void updateThrottle(percentage_t p) {
+    throttle = p;
 }
 
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);

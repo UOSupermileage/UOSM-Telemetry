@@ -9,8 +9,6 @@
 #include <Arduino.h>
 #include "exception"
 
-
-
 class PressureSensor: public Sensor<pressure_t> {
 private:
     MS5525DSO sensor_pres = MS5525DSO(pp005GS); //Need to look into the input pp005GS
