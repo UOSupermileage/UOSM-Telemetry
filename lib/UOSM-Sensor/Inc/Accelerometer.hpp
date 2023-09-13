@@ -10,6 +10,7 @@
 #define G_RANGE 2
 #define GRAVITY 9.81f
 #define SAMPLE_RATE 400
+#define VERBOSE_SERIAL
 
 class Accelerometer: public Sensor<acceleration_t>{
 private:
