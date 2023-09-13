@@ -8,14 +8,14 @@
 #include <ArduinoIoTCloud.h>
 #include <Arduino_ConnectionHandler.h>
 
-const char DEVICE_LOGIN_NAME[]  = "d83436e0-373c-41cb-bc60-eccf8d0d70f6";
+const char DEVICE_LOGIN_NAME[]  = "";
 
-const char SSID[]               = "CBY-Makerspace";    // Network SSID (name)
-const char PASS[]               = "W2uOttawa!";    // Network password (use for WPA, or use as key for WEP)
-const char DEVICE_KEY[]         = "Z6N4L27SDKTMPNBVV0JZ";    // Secret device password
+const char SSID[]               = "";    // Network SSID (name)
+const char PASS[]               = "";    // Network password (use for WPA, or use as key for WEP)
+const char DEVICE_KEY[]         = "";    // Secret device password
 
 // Name of variables is important. They map to definitions in our IOT Cloud Dashboard
-float battery_Voltage;
+float battery_voltage;
 
 // Acceleration Sensor
 CloudAcceleration acceleration_x;
@@ -42,7 +42,7 @@ void initProperties(){
     ArduinoCloud.setBoardId(DEVICE_LOGIN_NAME);
     ArduinoCloud.setSecretDeviceKey(DEVICE_KEY);
 
-    ArduinoCloud.addProperty(battery_Voltage, READ, ON_CHANGE, NULL);
+    ArduinoCloud.addProperty(battery_voltage, READ, ON_CHANGE, NULL);
     ArduinoCloud.addProperty(acceleration_x, READ, ON_CHANGE, NULL);
     ArduinoCloud.addProperty(acceleration_y, READ, ON_CHANGE, NULL);
     ArduinoCloud.addProperty(acceleration_z, READ, ON_CHANGE, NULL);
@@ -50,7 +50,7 @@ void initProperties(){
 
 void updateBatteryVoltage(float voltage) {
     DebugPrint("Collected Voltage: [%d]", voltage);
-    battery_Voltage = voltage;
+    battery_voltage = voltage;
 }
 
 void updateAcceleration(acceleration_t acceleration){

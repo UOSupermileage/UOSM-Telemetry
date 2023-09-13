@@ -17,16 +17,16 @@
 
 #define DEFAULT_BUFFER_SIZE 1
 
-#define SENSOR_GPS 1
-#define SENSOR_VOLTAGE 1
+#define SENSOR_GPS 0
+#define SENSOR_VOLTAGE 0
 #define SENSOR_ACCELEROMETER 1
-#define SENSOR_PRESSURE 1
-#define SENSOR_CAN_LOG 1
-#define SENSOR_THROTTLE 1
-#define SENSOR_SPEEDOMETER 1
-#define SENSOR_RPM 1
+#define SENSOR_PRESSURE 0
+#define SENSOR_CAN_LOG 0
+#define SENSOR_THROTTLE 0
+#define SENSOR_SPEEDOMETER 0
+#define SENSOR_RPM 0
 
-#define LOGGER_SD 1
+#define LOGGER_SD 0
 #define LOGGER_IOT 1
 
 /**
@@ -193,6 +193,8 @@ void setup() {
     setDebugMessageLevel(2);
     ArduinoCloud.printDebugInfo();
 #endif
+
+    DebugPrint("Setup Complete!");
 }
 
 void loop() {
