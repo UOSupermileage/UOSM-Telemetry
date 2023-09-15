@@ -42,7 +42,7 @@ String filename;
         }
 
         digitalWrite(signalLightPin, fileMounted);
-        vTaskDelay(500);
+        vTaskDelay(logRate);
     }
 }
 
