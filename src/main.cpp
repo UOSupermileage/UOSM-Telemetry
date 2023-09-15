@@ -9,11 +9,11 @@
 #include "ThingProperties.h"
 #include "Conversions.h"
 #include "GPSSensor.hpp"
-#include "InternalCommsModule.h"
 #include "LoggerTask.hpp"
 #include "ValueSensor.hpp"
-#include "CANDriver.h"
 #include "CANLogEntry.hpp"
+#include "CANDriver.h"
+#include "CANTask.hpp"
 
 #define DEFAULT_BUFFER_SIZE 1
 
@@ -89,24 +89,6 @@ ValueSensor<speed_t>* speedSensor = new ValueSensor<speed_t>(DEFAULT_BUFFER_SIZE
 #if SENSOR_RPM
 ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t>(DEFAULT_BUFFER_SIZE);
 #endif
-
-// RTOS Handles
-TaskHandle_t canHandle = nullptr;
-
-// RTOS Execution Loops
-[[noreturn]] void canTask(void* args) {
-    result_t isInitialized = RESULT_FAIL;
-
-    while (true) {
-        if (isInitialized == RESULT_FAIL) {
-            isInitialized = IComms_Init();
-        } else {
-            IComms_PeriodicReceive();
-        }
-
-        vTaskDelay(100);
-    }
-}
 
 // ESP32 Setup
 void setup() {
@@ -197,6 +179,10 @@ void setup() {
     gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, 5);
 #endif
 
+#if SENSOR_CAN_LOG == 1 || SENSOR_RPM == 1 || SENSOR_SPEEDOMETER == 1 || SENSOR_THROTTLE == 1 || 1
+    CANInit(1024 * 10, 5, 100);
+#endif
+
 #if LOGGER_SD == 1
     LoggerInit(SD_CS_PIN, SD_SIGNAL_LIGHT_PIN, SD_DETECT_PIN, SD_LOG_BUTTON_PIN, []() {return "";}, "", 1024 * 5, 3, 200);
 #endif
@@ -223,6 +209,9 @@ void loop() {
 #endif
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /************
  * Adapter to convert CAN Callbacks into Sensors
  ************/
@@ -263,7 +252,8 @@ void ErrorDataCallback(iCommsMessage_t *msg) {
         canLogsSensor->collect(new CANLogEntry(ERROR_DATA_ID, code, status, CAN_DECIMAL));
 #endif
     } else {
-        DebugPrint("msg.dataLength does not match lookup table. %d != %d", msg->dataLength, CANMessageLookUpTable[ERROR_DATA_ID].numberOfBytes);
+        DebugPrint("msg.dataLength does not match lookup table. %d != %d", msg->dataLength,
+                   CANMessageLookUpTable[ERROR_DATA_ID].numberOfBytes);
     }
 }
 
@@ -301,7 +291,8 @@ void EventDataCallback(iCommsMessage_t *msg) {
         canLogsSensor->collect(new CANLogEntry(EVENT_DATA_ID, code, status, CAN_DECIMAL));
 #endif
     } else {
-        DebugPrint("msg.dataLength does not match lookup table. %d != %d", msg->dataLength, CANMessageLookUpTable[ERROR_DATA_ID].numberOfBytes);
+        DebugPrint("msg.dataLength does not match lookup table. %d != %d", msg->dataLength,
+                   CANMessageLookUpTable[ERROR_DATA_ID].numberOfBytes);
     }
 }
 
@@ -328,6 +319,10 @@ void MotorRPMDataCallback(iCommsMessage_t *msg) {
 void CurrentVoltageDataCallback(iCommsMessage_t *msg) {
     // Do nothing, telemetry broadcasts this type of message
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #else
 #ifndef PIO_UNIT_TESTING

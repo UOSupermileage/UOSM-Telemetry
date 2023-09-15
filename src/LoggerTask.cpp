@@ -8,7 +8,7 @@ String createFilename();
 void mount();
 void unmount();
 
-TaskHandle_t handle = NULL;
+static TaskHandle_t handle = NULL;
 
 uint8_t chipSelectPin;
 uint8_t signalLightPin;
