@@ -119,7 +119,9 @@ void setup() {
 #if SENSOR_VOLTAGE == 1
     voltageSensor = new VoltageSensor(DEFAULT_BUFFER_SIZE);
     voltageSensor->addListener([](const voltage_t& newValue) {
-        updateBatteryVoltage(convertVoltageToFloat(newValue));
+        iotMutex.execute([newValue]() {
+            updateBatteryVoltage(convertVoltageToFloat(newValue));
+        });
     });
 
     voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, 5);
@@ -128,7 +130,9 @@ void setup() {
 #if SENSOR_ACCELEROMETER == 1
     accelerationSensor = new Accelerometer(DEFAULT_BUFFER_SIZE);
     accelerationSensor->addListener([](const acceleration_t & newValue){
-        updateAcceleration(newValue);
+        iotMutex.execute([newValue]() {
+            updateAcceleration(newValue);
+        });
     });
 
     accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 10, 5);
@@ -137,7 +141,9 @@ void setup() {
 #if SENSOR_PRESSURE == 1
     pressureSensor = new PressureSensor(DEFAULT_BUFFER_SIZE);
     pressureSensor->addListener([](const pressure_t & newValue){
-        updatePressure(newValue);
+        iotMutex.execute([newValue]() {
+            updatePressure(newValue);
+        });
     });
 
     pressureSensorTask = new PollingSensorTask<pressure_t>(pressureSensor, 200, "T_PressureSensor", 1024 * 10, 5);
@@ -152,19 +158,25 @@ void setup() {
 
 #if SENSOR_THROTTLE == 1
     throttleSensor->addListener([](const percentage_t& newValue) {
-        updateThrottle(newValue);
+        iotMutex.execute([newValue]() {
+            updateThrottle(newValue);
+        });
     });
 #endif
 
 #if SENSOR_RPM == 1
     rpmSensor->addListener([](const velocity_t & newValue) {
-        updateRPM(newValue);
+        iotMutex.execute([newValue]() {
+            updateRPM(newValue);
+        });
     });
 #endif
 
 #if SENSOR_SPEEDOMETER == 1
     speedSensor->addListener([](const speed_t& newValue) {
-        updateSpeed(newValue);
+        iotMutex.execute([newValue]() {
+            updateSpeed(newValue);
+        });
     });
 #endif
 
@@ -178,9 +190,11 @@ void setup() {
 #if SENSOR_GPS == 1
     gpsSensor = new GPSSensor(fona, DEFAULT_BUFFER_SIZE);
     gpsSensor->addListener([](const gps_coordinate_t& newValue) {
-        updateGPS(newValue);
-        gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, 5);
+        iotMutex.execute([newValue]() {
+            updateGPS(newValue);
+        });
     });
+    gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, 5);
 #endif
 
 #if LOGGER_SD == 1
@@ -199,7 +213,13 @@ void setup() {
 
 void loop() {
 #if LOGGER_IOT == 1
-    ArduinoCloud.update();
+    if (!iotMutex.getLocked()) {
+        iotMutex.lock();
+        ArduinoCloud.update();
+        iotMutex.unlock();
+    } else {
+        vTaskDelay(DEFAULT_MUTEX_DELAY);
+    }
 #endif
 }
 

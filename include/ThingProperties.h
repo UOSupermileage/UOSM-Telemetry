@@ -7,12 +7,15 @@
 
 #include <ArduinoIoTCloud.h>
 #include <Arduino_ConnectionHandler.h>
+#include "Mutex.hpp"
 
-const char DEVICE_LOGIN_NAME[]  = "";
+const char DEVICE_LOGIN_NAME[]  = "484c5baf-f235-40cf-9a75-3dfc3334a2dd";
 
-const char SSID[]               = "";    // Network SSID (name)
-const char PASS[]               = "";    // Network password (use for WPA, or use as key for WEP)
-const char DEVICE_KEY[]         = "";    // Secret device password
+const char SSID[]               = "Jeremy";    // Network SSID (name)
+const char PASS[]               = "PeaceTea";    // Network password (use for WPA, or use as key for WEP)
+const char DEVICE_KEY[]         = "RYVMGY6U1SV9YGEBWDG7";    // Secret device password
+
+Mutex iotMutex;
 
 // Name of variables is important. They map to definitions in our IOT Cloud Dashboard
 float battery_voltage;
