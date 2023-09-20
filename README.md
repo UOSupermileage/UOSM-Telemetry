@@ -20,6 +20,11 @@ FSPIQ (Master In) -> Slave Out
 FSPICLK (Clk) -> Slave Clk
 FSPICS0 (CS) -> Chip Enable
 
+## Computing Overall Efficiency for a lap
+1. List of GPS coordinates
+2. Keep track of energy consumed during the lap
+3. When you revisit a point, just do a simple percentage comparison to see new efficiency
+
 ## Notes
 
 Cannot find "Update.h" resolved by using deep+ ldf in .ini
