@@ -98,7 +98,7 @@ void setup() {
     DebugPrint("Initializing Telemetry System...");
 
 #ifndef UOSM_SECRETS
-    DebugPrint("Failed to find secrets... Aborting!");
+    DebugPrint("Failed to find secrets... Make sure to create a Secrets.h file. Aborting!");
     while (true) {}
 #endif
 
