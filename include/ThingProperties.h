@@ -88,7 +88,8 @@ void updateRPM(velocity_t r) {
 }
 
 void updateSpeed(speed_t s) {
-    speed = s;
+    // store in km / h
+    speed = (float) s / 1000;
 }
 
 void updateThrottle(percentage_t p) {
