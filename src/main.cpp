@@ -14,6 +14,7 @@
 #include "CANLogEntry.hpp"
 #include "CANDriver.h"
 #include "CANTask.hpp"
+#include "Secrets.h"
 
 #define DEFAULT_BUFFER_SIZE 1
 
@@ -21,10 +22,10 @@
 #define SENSOR_VOLTAGE 0
 #define SENSOR_ACCELEROMETER 1
 #define SENSOR_PRESSURE 0
-#define SENSOR_CAN_LOG 0
-#define SENSOR_THROTTLE 0
+#define SENSOR_CAN_LOG 1
+#define SENSOR_THROTTLE 1
 #define SENSOR_SPEEDOMETER 0
-#define SENSOR_RPM 0
+#define SENSOR_RPM 1
 
 #define LOGGER_SD 0
 #define LOGGER_IOT 1
@@ -96,6 +97,14 @@ void setup() {
 
     DebugPrint("Initializing Telemetry System...");
 
+#ifndef UOSM_SECRETS
+    DebugPrint("Failed to find secrets... Aborting!");
+    while (true) {}
+#endif
+
+    DebugPrint("MAC Address:");
+    Serial.println(WiFi.macAddress());
+
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
 
 #if SENSOR_VOLTAGE == 1
@@ -135,6 +144,7 @@ void setup() {
     canLogsSensor->addListener([](const CANLogEntry* newValue) {
         // Print all received CAN messages to Serial
         DebugPrint(newValue->getMessage());
+        updateCanMessages(newValue->getMessage());
     });
 #endif
 

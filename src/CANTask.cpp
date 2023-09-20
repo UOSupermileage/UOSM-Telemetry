@@ -5,6 +5,8 @@
 #include "CANTask.hpp"
 
 #include "InternalCommsModule.h"
+#include <Arduino.h>
+#include "UOSMCoreConfig.h"
 
 // RTOS Handles
 static TaskHandle_t handle = nullptr;
@@ -13,6 +15,9 @@ uint16_t pollingRate;
 
 // RTOS Execution Loops
 [[noreturn]] void CANTask(void* args) {
+
+    pinMode(MCP2515_CS_PIN, OUTPUT);
+
     result_t isInitialized = RESULT_FAIL;
 
     while (true) {
