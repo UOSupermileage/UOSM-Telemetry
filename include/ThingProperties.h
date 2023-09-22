@@ -10,6 +10,8 @@
 #include "Mutex.hpp"
 #include "Secrets.h"
 
+#define MOTOR_ON_TIMEOUT 500
+
 Mutex iotMutex;
 
 // Name of variables is important. They map to definitions in our IOT Cloud Dashboard
@@ -39,6 +41,10 @@ float altitude;
 // CAN Sensor
 CloudVelocity speed;
 
+// Events
+bool motorOn = false;
+uint32_t motorOnTimestamp;
+
 void initProperties(){
     ArduinoCloud.setBoardId(DEVICE_LOGIN_NAME);
     ArduinoCloud.setSecretDeviceKey(DEVICE_KEY);
@@ -54,6 +60,7 @@ void initProperties(){
     ArduinoCloud.addProperty(throttle, READ, ON_CHANGE, NULL);
     ArduinoCloud.addProperty(pressure, READ, ON_CHANGE, NULL);
     ArduinoCloud.addProperty(speed, READ, ON_CHANGE, NULL);
+    ArduinoCloud.addProperty(motorOn, READ, ON_CHANGE, NULL);
 }
 
 void updateBatteryVoltage(float voltage) {
@@ -84,7 +91,19 @@ void updateGPS(gps_coordinate_t coordinate) {
 }
 
 void updateRPM(velocity_t r) {
-    motorRPM = r;
+    // Store inverted because the rpm is inverse
+    motorRPM = r * -1;
+}
+
+void updateMotorOn(boolean isOn) {
+    motorOn = isOn;
+    motorOnTimestamp = xTaskGetTickCount();
+}
+
+void periodicMotorOn() {
+    if (motorOn && (motorOnTimestamp + MOTOR_ON_TIMEOUT) < xTaskGetTickCount()) {
+        motorOn = false;
+    }
 }
 
 void updateSpeed(speed_t s) {

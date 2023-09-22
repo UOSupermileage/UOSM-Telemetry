@@ -24,7 +24,7 @@
 #define SENSOR_PRESSURE 0
 #define SENSOR_CAN_LOG 1
 #define SENSOR_THROTTLE 1
-#define SENSOR_SPEEDOMETER 0
+#define SENSOR_SPEEDOMETER 1
 #define SENSOR_RPM 1
 
 #define LOGGER_SD 0
@@ -211,6 +211,7 @@ void loop() {
 #if LOGGER_IOT == 1
     if (!iotMutex.getLocked()) {
         iotMutex.lock();
+        periodicMotorOn();
         ArduinoCloud.update();
         iotMutex.unlock();
     } else {
@@ -293,6 +294,8 @@ void EventDataCallback(iCommsMessage_t *msg) {
         auto status = (flag_status_t) msg->data[0];
 
         switch (code) {
+            case DEADMAN:
+                updateMotorOn(status);
             default:
                 break;
         }
