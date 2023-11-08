@@ -5,6 +5,8 @@
 #ifndef UOSM_TELEMETRY_THINGPROPERTIES_H
 #define UOSM_TELEMETRY_THINGPROPERTIES_H
 
+#include "ApplicationTypes.h"
+
 #include <ArduinoIoTCloud.h>
 #include <Arduino_ConnectionHandler.h>
 #include "Mutex.hpp"
@@ -32,8 +34,7 @@ CloudPressure pressure;
 CloudTemperatureSensor temperature;
 
 // GPS Sensor
-float latitude;
-float longitude;
+CloudLocation gpsCoordinates;
 float gps_speed; // in km / h
 float heading;
 float altitude;
@@ -46,8 +47,7 @@ bool motorOn = false;
 uint32_t motorOnTimestamp;
 
 void initProperties(){
-    ArduinoCloud.setBoardId(DEVICE_LOGIN_NAME);
-    ArduinoCloud.setSecretDeviceKey(DEVICE_KEY);
+    ArduinoCloud.setThingId(DEVICE_LOGIN_NAME);
 
     ArduinoCloud.addProperty(accelerationX, READ, ON_CHANGE, NULL);
     ArduinoCloud.addProperty(accelerationY, READ, ON_CHANGE, NULL);
@@ -61,6 +61,7 @@ void initProperties(){
     ArduinoCloud.addProperty(pressure, READ, ON_CHANGE, NULL);
     ArduinoCloud.addProperty(speed, READ, ON_CHANGE, NULL);
     ArduinoCloud.addProperty(motorOn, READ, ON_CHANGE, NULL);
+    ArduinoCloud.addProperty(gpsCoordinates, READ, ON_CHANGE, NULL);
 }
 
 void updateBatteryVoltage(float voltage) {
@@ -83,8 +84,7 @@ void updatePressure(pressure_t p){
 }
 
 void updateGPS(gps_coordinate_t coordinate) {
-    latitude = coordinate.latitude;
-    longitude = coordinate.longitude;
+    gpsCoordinates = { coordinate.longitude, coordinate.latitude };
     gps_speed = coordinate.speed_kmh;
     heading = coordinate.heading;
     altitude = coordinate.altitude;
@@ -97,11 +97,11 @@ void updateRPM(velocity_t r) {
 
 void updateMotorOn(boolean isOn) {
     motorOn = isOn;
-    motorOnTimestamp = xTaskGetTickCount();
+    motorOnTimestamp = 0; //TODO: Fix this
 }
 
 void periodicMotorOn() {
-    if (motorOn && (motorOnTimestamp + MOTOR_ON_TIMEOUT) < xTaskGetTickCount()) {
+    if (motorOn && (motorOnTimestamp + MOTOR_ON_TIMEOUT) < 0) {
         motorOn = false;
     }
 }

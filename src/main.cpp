@@ -1,26 +1,18 @@
-#include "VoltageSensor.hpp"
-#include "Accelerometer.hpp"
- #include "PressureSensor.hpp"
-#ifdef ESP32
-
 #include <Arduino.h>
-#include "PollingSensorTask.hpp"
 
+#include "ApplicationTypes.h"
 #include "ThingProperties.h"
-#include "Conversions.h"
-#include "GPSSensor.hpp"
-#include "LoggerTask.hpp"
+
 #include "ValueSensor.hpp"
 #include "CANLogEntry.hpp"
-#include "CANDriver.h"
 #include "CANTask.hpp"
-#include "Secrets.h"
+#include "CANDriver.h"
 
 #define DEFAULT_BUFFER_SIZE 1
 
 #define SENSOR_GPS 0
 #define SENSOR_VOLTAGE 0
-#define SENSOR_ACCELEROMETER 1
+#define SENSOR_ACCELEROMETER 0
 #define SENSOR_PRESSURE 0
 #define SENSOR_CAN_LOG 1
 #define SENSOR_THROTTLE 1
@@ -30,29 +22,19 @@
 #define LOGGER_SD 0
 #define LOGGER_IOT 1
 
-/**
+ /*
  * 0 == WiFi
  * 1 == Cellular
  */
 #define INTERNET_CONNECTION 0
 
-
-#define SD_CS_PIN 0
+#define SD_CS_PIN 18
 #define SD_SIGNAL_LIGHT_PIN 0
 #define SD_DETECT_PIN 0
-#define SD_LOG_BUTTON_PIN 0
+#define SD_LOG_BUTTON_PIN 17
 #define SD_LOGGER_STACK_SIZE 10240
 #define SD_LOGGER_PRIORITY 5
 #define SD_LOGGING_RATE 200
-
-#define FONA_TX 10
-#define FONA_RX 9
-#define FONA_RESET 14
-#define fonaSerial Serial1
-
-#if SENSOR_GPS == 1 || INTERNET_CONNECTION == 1
-Fona3G* fona;
-#endif
 
 #if SENSOR_GPS == 1
 GPSSensor* gpsSensor;
@@ -91,7 +73,6 @@ ValueSensor<speed_t>* speedSensor = new ValueSensor<speed_t>(DEFAULT_BUFFER_SIZE
 ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t>(DEFAULT_BUFFER_SIZE);
 #endif
 
-// ESP32 Setup
 void setup() {
     Serial.begin(115200);
 
@@ -101,9 +82,6 @@ void setup() {
     DebugPrint("Failed to find secrets... Make sure to create a Secrets.h file. Aborting!");
     while (true) {}
 #endif
-
-    DebugPrint("MAC Address:");
-    Serial.println(WiFi.macAddress());
 
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
 
@@ -126,7 +104,7 @@ void setup() {
         });
     });
 
-    accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 10, 5);
+    accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 10,static_cast<osPriority_t>(5));
 #endif
 
 #if SENSOR_PRESSURE == 1
@@ -175,8 +153,7 @@ void setup() {
 #if INTERNET_CONNECTION == 0
 
 #elif INTERNET_CONNECTION == 1
-    fonaSerial.begin(4800, SERIAL_8N1, FONA_TX, FONA_RX);
-    fona = new Fona3G(&fonaSerial, FONA_RESET);
+
 #endif
 
 #if SENSOR_GPS == 1
@@ -190,11 +167,15 @@ void setup() {
 #endif
 
 #if SENSOR_CAN_LOG == 1 || SENSOR_RPM == 1 || SENSOR_SPEEDOMETER == 1 || SENSOR_THROTTLE == 1
-    CANInit(1024 * 10, 5, 100);
+     CANInit(1024 * 10, (osPriority_t) 5, 100);
 #endif
 
 #if LOGGER_SD == 1
-    LoggerInit(SD_CS_PIN, SD_SIGNAL_LIGHT_PIN, SD_DETECT_PIN, SD_LOG_BUTTON_PIN, []() {return "";}, "", 1024 * 5, 3, 200);
+    LoggerInit(SD_CS_PIN, SD_SIGNAL_LIGHT_PIN, SD_DETECT_PIN, SD_LOG_BUTTON_PIN, []() {
+        char* row = new char[100];
+        sprintf(row, "%d,%f,%f,%d,%f,%f", xTaskGetTickCount(), (float) throttle, (float) speed, motorRPM, (float) batteryCurrent, (float) batteryVoltage);
+        return row;
+    }, "timestamp,throttle,speed,rpm,current,voltage", SD_LOGGER_STACK_SIZE, SD_LOGGER_PRIORITY, SD_LOGGING_RATE);
 #endif
 
 #if LOGGER_IOT == 1
@@ -208,16 +189,14 @@ void setup() {
 }
 
 void loop() {
-#if LOGGER_IOT == 1
     if (!iotMutex.getLocked()) {
         iotMutex.lock();
         periodicMotorOn();
         ArduinoCloud.update();
         iotMutex.unlock();
     } else {
-        vTaskDelay(DEFAULT_MUTEX_DELAY);
+        rtos::ThisThread::sleep_for(DEFAULT_MUTEX_DELAY);
     }
-#endif
 }
 
 #ifdef __cplusplus
@@ -336,13 +315,3 @@ void CurrentVoltageDataCallback(iCommsMessage_t *msg) {
 #ifdef __cplusplus
 }
 #endif
-
-#else
-#ifndef PIO_UNIT_TESTING
-int main() {
-    printf("Running on local machine. Exiting.");
-    return 0;
-}
-#endif
-#endif
-

@@ -21,7 +21,7 @@ public:
      */
     void collect() override {
         // Get some arbitrary data for testing
-        voltage_t v = xTaskGetTickCount() % 1000;
+        voltage_t v = 1000;
         printf("Collected voltage %d", v);
         add(v);
     }

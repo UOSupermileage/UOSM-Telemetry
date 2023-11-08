@@ -3,18 +3,20 @@
 //
 
 #include "CANTask.hpp"
+#include "UOSMCoreConfig.h"
 
 #include "InternalCommsModule.h"
 #include <Arduino.h>
-#include "UOSMCoreConfig.h"
+
+#include <rtos.h>
 
 // RTOS Handles
-static TaskHandle_t handle = nullptr;
+static rtos::Thread canThread;
 
 uint16_t pollingRate;
 
 // RTOS Execution Loops
-[[noreturn]] void CANTask(void* args) {
+[[noreturn]] void CANTask() {
 
     pinMode(MCP2515_CS_PIN, OUTPUT);
 
@@ -27,16 +29,17 @@ uint16_t pollingRate;
             IComms_PeriodicReceive();
         }
 
-        vTaskDelay(pollingRate);
+        rtos::ThisThread::sleep_for(pollingRate);
     }
 }
 
 void CANInit(
         uint32_t stackSize,
-        UBaseType_t priority,
+        osPriority_t priority,
         uint16_t _pollingRate
 ) {
     pollingRate = _pollingRate;
-    xTaskCreate(CANTask, "CANTask", stackSize, nullptr, priority, &handle);
+    canThread.set_priority(priority);
+    canThread.start(mbed::callback(CANTask));
 }
 

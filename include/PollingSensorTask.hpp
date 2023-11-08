@@ -7,18 +7,20 @@
 
 #include "SensorTask.hpp"
 #include <Arduino.h>
+#include <cmsis.h>
+#include <rtos.h>
 
 template<typename T>
 class PollingSensorTask: public SensorTask {
 private:
-    TaskHandle_t handle = NULL;
+    rtos::Thread thread;
 
     static void loop(void* parameters) {
-        PollingSensorTaskArgs* args = (PollingSensorTaskArgs*) parameters;
+        auto* args = (PollingSensorTaskArgs*) parameters;
 
         for(;;) {
             args->collector->collect();
-            vTaskDelay(args->pollingRate);
+            rtos::ThisThread::sleep_for(args->pollingRate);
         }
     }
 
@@ -30,9 +32,11 @@ public:
         PollingSensorTaskArgs(Collector* collector, uint16_t pollingRate): collector(collector), pollingRate(pollingRate) {}
     };
 
-    PollingSensorTask(Sensor<T>* sensor, const uint16_t pollingRate, const char* name, uint32_t stackSize, UBaseType_t priority) {
+    PollingSensorTask(Sensor<T>* sensor, const uint16_t pollingRate, const char* name, uint32_t stackSize, osPriority_t priority) {
+        // TODO: Is this a memory leak?
         auto* args = new PollingSensorTaskArgs(sensor, pollingRate);
-        xTaskCreate(PollingSensorTask::loop, name, stackSize, args, priority, &handle);
+        thread.set_priority(priority);
+        thread.start(mbed::callback(PollingSensorTask::loop, args));
     }
 };
 

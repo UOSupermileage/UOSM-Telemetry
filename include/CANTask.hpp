@@ -7,10 +7,11 @@
 
 #include <Arduino.h>
 #include "ApplicationTypes.h"
+#include <rtos.h>
 
 void CANInit(
         uint32_t stackSize,
-        UBaseType_t priority,
+        osPriority_t priority,
         uint16_t _pollingRate
 );
 

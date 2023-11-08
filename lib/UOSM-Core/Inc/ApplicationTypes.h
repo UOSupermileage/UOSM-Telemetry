@@ -43,7 +43,7 @@ typedef enum {
 
 typedef enum {
     DEADMAN,
-    TIMER,
+    EVENT_TIMER,
     MOTOR_INITIALIZING,
     UNDERVOLTAGE,
     DRIVER_ENABLED

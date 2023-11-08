@@ -3,12 +3,13 @@
 //
 
 #include "LoggerTask.hpp"
+#include <rtos.h>
 
 String createFilename();
 void mount();
 void unmount();
 
-static TaskHandle_t handle = NULL;
+static rtos::Thread loggerThread;
 
 uint8_t chipSelectPin;
 uint8_t signalLightPin;
@@ -25,7 +26,7 @@ bool fileMounted = false;
 String filename;
 
 
-[[noreturn]] void LoggerTask(void* args) {
+[[noreturn]] void LoggerTask() {
     while (true) {
         if (digitalRead(logButtonPin)) {
             if (fileMounted) {
@@ -42,7 +43,7 @@ String filename;
         }
 
         digitalWrite(signalLightPin, fileMounted);
-        vTaskDelay(logRate);
+        rtos::ThisThread::sleep_for(logRate);
     }
 }
 
@@ -54,7 +55,7 @@ void LoggerInit(
         const std::function<String()>& _constructRow,
         const String& _header,
         uint32_t stackSize,
-        UBaseType_t priority,
+        osPriority_t priority,
         uint16_t _logRate
     ) {
     chipSelectPin = _chipSelectPin;
@@ -72,7 +73,8 @@ void LoggerInit(
     pinMode(sdDetectPin, INPUT);
     pinMode(logButtonPin, INPUT);
 
-    xTaskCreate(LoggerTask, "LoggerTask", stackSize, nullptr, priority, &handle);
+    loggerThread.set_priority(priority);
+    loggerThread.start(mbed::callback(LoggerTask));
 }
 
 // Utilities
@@ -108,7 +110,7 @@ void mount() {
 
     filename = createFilename();
 
-    dataFile = SD.open(filename, FILE_APPEND);
+    dataFile = SD.open(filename, O_APPEND);
 
     if (dataFile) {
         // Successfully opened file

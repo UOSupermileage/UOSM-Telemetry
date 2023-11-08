@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include <SD.h>
+#include <cmsis_os.h>
 
 void LoggerInit(
         uint8_t _chipSelectPin,
@@ -16,7 +17,7 @@ void LoggerInit(
         const std::function<String()>& _constructRow,
         const String& _header,
         uint32_t stackSize,
-        UBaseType_t priority,
+        osPriority_t priority,
         uint16_t _logRate
 );
 

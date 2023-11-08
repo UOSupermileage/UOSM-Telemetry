@@ -53,7 +53,8 @@ public:
         uint8_t tries = 0;
         while (tries < maxTries) {
             if (!getLocked()) {
-                vTaskDelay(retryDelay);
+                rtos::ThisThread::sleep_for(retryDelay);
+//                vTaskDelay(retryDelay);
             } else {
                 lock();
                 callback();
