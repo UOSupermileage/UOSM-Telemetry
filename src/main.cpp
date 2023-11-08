@@ -3,17 +3,20 @@
 #include "ApplicationTypes.h"
 #include "ThingProperties.h"
 
+#include "PressureSensor.hpp"
 #include "ValueSensor.hpp"
 #include "CANLogEntry.hpp"
 #include "CANTask.hpp"
 #include "CANDriver.h"
+#include "PollingSensorTask.hpp"
+#include "Accelerometer.hpp"
 
 #define DEFAULT_BUFFER_SIZE 1
 
 #define SENSOR_GPS 0
 #define SENSOR_VOLTAGE 0
-#define SENSOR_ACCELEROMETER 0
-#define SENSOR_PRESSURE 0
+#define SENSOR_ACCELEROMETER 1
+#define SENSOR_PRESSURE 1
 #define SENSOR_CAN_LOG 1
 #define SENSOR_THROTTLE 1
 #define SENSOR_SPEEDOMETER 1
@@ -74,6 +77,9 @@ ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t>(DEFAULT_BUFFER_
 #endif
 
 void setup() {
+    SPI.begin();
+    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
+
     Serial.begin(115200);
 
     DebugPrint("Initializing Telemetry System...");
@@ -115,7 +121,7 @@ void setup() {
         });
     });
 
-    pressureSensorTask = new PollingSensorTask<pressure_t>(pressureSensor, 200, "T_PressureSensor", 1024 * 10, 5);
+    pressureSensorTask = new PollingSensorTask<pressure_t>(pressureSensor, 200, "T_PressureSensor", 1024 * 10, (osPriority_t) 5);
 #endif
 
 #if SENSOR_CAN_LOG == 1

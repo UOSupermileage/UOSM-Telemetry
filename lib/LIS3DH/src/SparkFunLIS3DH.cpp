@@ -104,6 +104,12 @@ status_t LIS3DHCore::beginCore(void)
 
 		// MODE0 for Teensy 3.1 operation
 		SPI.setDataMode(SPI_MODE0);
+#elif defined(MBED)
+            // initalize the chip select pins:
+		pinMode(chipSelectPin, OUTPUT);
+		digitalWrite(chipSelectPin, HIGH);
+		// start the SPI library:
+//		SPI.begin();
 #else
 // probably __AVR__
 		// initalize the chip select pins:

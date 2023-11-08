@@ -69,12 +69,35 @@ bool MS5525DSO::_begin_common(void)
 
 void MS5525DSO::dumpCoefficients(Stream & s)
 {
-  s.printf("C1 - Pressure Sensitivity                            : %u\r\n", P_SENS);
-  s.printf("C2 - Pressure Offset                                 : %u\r\n", P_OFF);
-  s.printf("C3 - Temperature Coefficient of Pressure Sensitivity : %u\r\n", TC_SENS);
-  s.printf("C4 - Temperature Coefficient of Pressure Offset      : %u\r\n", TC_OFF);
-  s.printf("C5 - Reference Temperature                           : %u\r\n", T_REF);
-  s.printf("C6 - Temperature Coefficient of Temperature          : %u\r\n", T_SENS);
+    char* buffer = new char[100];
+    sprintf(buffer, "C1 - Pressure Sensitivity                            : %u\r\n", P_SENS);
+    s.print(buffer);
+    delete[] buffer;
+
+    buffer = new char[100];
+    sprintf(buffer, "C2 - Pressure Offset                                 : %u\r\n", P_OFF);
+    s.print(buffer);
+    delete[] buffer;
+
+    buffer = new char[100];
+    sprintf(buffer, "C3 - Temperature Coefficient of Pressure Sensitivity : %u\r\n", TC_SENS);
+    s.print(buffer);
+    delete[] buffer;
+
+    buffer = new char[100];
+    sprintf(buffer, "C4 - Temperature Coefficient of Pressure Offset      : %u\r\n", TC_OFF);
+    s.print(buffer);
+    delete[] buffer;
+
+    buffer = new char[100];
+    sprintf(buffer, "C5 - Reference Temperature                           : %u\r\n", T_REF);
+    s.print(buffer);
+    delete[] buffer;
+
+    buffer = new char[100];
+    sprintf(buffer, "C6 - Temperature Coefficient of Temperature          : %u\r\n", T_SENS);
+    s.print(buffer);
+    delete[] buffer;
 }
 
 bool MS5525DSO::readPressureAndTemperature(double * pressure, double * temperature)
