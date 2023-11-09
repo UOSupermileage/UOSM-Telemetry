@@ -33,6 +33,20 @@ Distributed as-is; no warranty is given.
 #define I2C_MODE 0
 #define SPI_MODE 1
 
+#ifdef MBED
+#include <Arduino_PortentaBreakout.h>
+
+#define CS_TYPE breakoutPin
+#define SPI_INTERFACE Breakout.SPI_0
+#define DIGITAL_WRITE Breakout.digitalWrite
+#define PIN_MODE Breakout.pinMode
+#else
+#define CS_TYPE uint8_t
+#define SPI_INTERFACE SPI
+#define DIGITAL_WRITE digitalWrite
+#define PIN_MODE pinMode
+#endif
+
 // Return values 
 typedef enum
 {
@@ -53,8 +67,7 @@ typedef enum
 class LIS3DHCore
 {
 public:
-	LIS3DHCore( uint8_t );
-	LIS3DHCore( uint8_t, uint8_t );
+	LIS3DHCore( uint8_t, CS_TYPE );
 	~LIS3DHCore() = default;
 	
 	status_t beginCore( void );
@@ -79,7 +92,7 @@ private:
 	//Communication stuff
 	uint8_t commInterface;
 	uint8_t I2CAddress;
-	uint8_t chipSelectPin;
+	CS_TYPE chipSelectPin;
 };
 
 //This struct holds the settings the driver uses to do calculations
@@ -123,8 +136,8 @@ public:
 
 	//Constructor generates default SensorSettings.
 	//(over-ride after construction if desired)
-	LIS3DH( uint8_t busType = I2C_MODE, uint8_t inputArg = 0x19 );
-	//~LIS3DH() = default;
+	LIS3DH( uint8_t busType = SPI_MODE, CS_TYPE inputArg = GPIO_0 );
+	~LIS3DH() = default;
 	
 	//Call to apply SensorSettings
 	status_t begin( void );

@@ -4,9 +4,13 @@
 #include "Sensor.hpp"
 #include "ApplicationTypes.h"
 #include "SparkFunLIS3DH.h"
-#include "SPI.h"
 
-#define CS 5
+#ifdef MBED
+#include <Arduino_PortentaBreakout.h>
+#define CS GPIO_0
+#else
+#define CS 0
+#endif
 #define G_RANGE 2
 #define GRAVITY 9.81f
 #define SAMPLE_RATE 400

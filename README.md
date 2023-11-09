@@ -16,9 +16,16 @@ It's important to install CLion 2023.2 or newer. It adds proper PlatformIO suppo
 ## Pins
 
 FSPID (Master Out) -> Slave In
+
 FSPIQ (Master In) -> Slave Out
+
 FSPICLK (Clk) -> Slave Clk
+
 FSPICS0 (CS) -> Chip Enable
+
+SDA -> MOSI
+
+SDD -> MISO
 
 ## Computing Overall Efficiency for a lap
 1. List of GPS coordinates

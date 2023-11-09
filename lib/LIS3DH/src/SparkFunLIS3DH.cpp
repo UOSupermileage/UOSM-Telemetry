@@ -31,7 +31,6 @@ Distributed as-is; no warranty is given.
 //See SparkFunLIS3DH.h for additional topology notes.
 
 #include "SparkFunLIS3DH.h"
-#include "stdint.h"
 
 #include "Wire.h"
 #include "SPI.h"
@@ -49,10 +48,10 @@ Distributed as-is; no warranty is given.
 //  For SPI, construct LIS3DHCore myIMU(SPI_MODE, 10);
 //  For I2C, construct LIS3DHCore myIMU(I2C_MODE, 0x6B);
 //
-//  Default construction is I2C mode, address 0x6B.
+//  Default construction is SPI mode, CS GPIO 0
 //
 //****************************************************************************//
-LIS3DHCore::LIS3DHCore( uint8_t busType, uint8_t inputArg ) : commInterface(I2C_MODE), I2CAddress(0x19), chipSelectPin(10)
+LIS3DHCore::LIS3DHCore( uint8_t busType, CS_TYPE inputArg ) : commInterface(I2C_MODE), I2CAddress(0x19), chipSelectPin(GPIO_0)
 {
 	commInterface = busType;
 	if( commInterface == I2C_MODE )
@@ -61,7 +60,7 @@ LIS3DHCore::LIS3DHCore( uint8_t busType, uint8_t inputArg ) : commInterface(I2C_
 	}
 	if( commInterface == SPI_MODE )
 	{
-		chipSelectPin = inputArg;
+        chipSelectPin = inputArg;
 	}
 
 }
@@ -79,8 +78,8 @@ status_t LIS3DHCore::beginCore(void)
 	case SPI_MODE:
 #if defined(ARDUINO_ARCH_ESP32)
 		// initalize the chip select pins:
-		pinMode(chipSelectPin, OUTPUT);
-		digitalWrite(chipSelectPin, HIGH);
+		pinMode(Breakout.digitalWritectPin, OUTPUT);
+		digitalWrite(Breakout.digitalWritectPin, HIGH);
 		SPI.begin();
 		SPI.setFrequency(1000000);
 		// Data is read and written MSb first.
@@ -91,8 +90,8 @@ status_t LIS3DHCore::beginCore(void)
 
 #elif defined(__MK20DX256__)
 		// initalize the chip select pins:
-		pinMode(chipSelectPin, OUTPUT);
-		digitalWrite(chipSelectPin, HIGH);
+		pinMode(Breakout.digitalWritectPin, OUTPUT);
+		digitalWrite(Breakout.digitalWritectPin, HIGH);
 		// start the SPI library:
 		SPI.begin();
 		// Maximum SPI frequency is 10MHz, could divide by 2 here:
@@ -105,15 +104,16 @@ status_t LIS3DHCore::beginCore(void)
 		// MODE0 for Teensy 3.1 operation
 		SPI.setDataMode(SPI_MODE0);
 #elif defined(MBED)
-            // initalize the chip select pins:
-		pinMode(chipSelectPin, OUTPUT);
-		digitalWrite(chipSelectPin, HIGH);
+        // initalize the chip select pins:
+        PIN_MODE(GPIO_0, OUTPUT);
+        DIGITAL_WRITE(GPIO_0, HIGH);
 		// start the SPI library:
-//		SPI.begin();
+        SPI_INTERFACE.begin();
+        SPI_INTERFACE.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
 #else
 // probably __AVR__
 		// initalize the chip select pins:
-		pinMode(chipSelectPin, OUTPUT);
+		pinMode(Breakout.digitalWritectPin, OUTPUT);
 		digitalWrite(chipSelectPin, HIGH);
 		// start the SPI library:
 		SPI.begin();
@@ -202,12 +202,12 @@ status_t LIS3DHCore::readRegisterRegion(uint8_t *outputPointer , uint8_t offset,
 
 	case SPI_MODE:
 		// take the chip select low to select the device:
-		digitalWrite(chipSelectPin, LOW);
+		DIGITAL_WRITE(chipSelectPin, LOW);
 		// send the device the register you want to read:
-		SPI.transfer(offset | 0x80 | 0x40);  //Ored with "read request" bit and "auto increment" bit
+        SPI_INTERFACE.transfer(offset | 0x80 | 0x40);  //Ored with "read request" bit and "auto increment" bit
 		while ( i < length ) // slave may send less than requested
 		{
-			c = SPI.transfer(0x00); // receive a byte as character
+			c = SPI_INTERFACE.transfer(0x00); // receive a byte as character
 			if( c == 0xFF )
 			{
 				//May have problem
@@ -223,7 +223,7 @@ status_t LIS3DHCore::readRegisterRegion(uint8_t *outputPointer , uint8_t offset,
 			returnError = IMU_ALL_ONES_WARNING;
 		}
 		// take the chip select high to de-select:
-		digitalWrite(chipSelectPin, HIGH);
+		DIGITAL_WRITE(chipSelectPin, HIGH);
 		break;
 
 	default:
@@ -266,13 +266,13 @@ status_t LIS3DHCore::readRegister(uint8_t* outputPointer, uint8_t offset) {
 
 	case SPI_MODE:
 		// take the chip select low to select the device:
-		digitalWrite(chipSelectPin, LOW);
+		DIGITAL_WRITE(chipSelectPin, LOW);
 		// send the device the register you want to read:
-		SPI.transfer(offset | 0x80);  //Ored with "read request" bit
+		SPI_INTERFACE.transfer(offset | 0x80);  //Ored with "read request" bit
 		// send a value of 0 to read the first byte returned:
-		result = SPI.transfer(0x00);
+		result = SPI_INTERFACE.transfer(0x00);
 		// take the chip select high to de-select:
-		digitalWrite(chipSelectPin, HIGH);
+		DIGITAL_WRITE(chipSelectPin, HIGH);
 		
 		if( result == 0xFF )
 		{
@@ -336,14 +336,14 @@ status_t LIS3DHCore::writeRegister(uint8_t offset, uint8_t dataToWrite) {
 
 	case SPI_MODE:
 		// take the chip select low to select the device:
-		digitalWrite(chipSelectPin, LOW);
+		DIGITAL_WRITE(chipSelectPin, LOW);
 		// send the device the register you want to read:
-		SPI.transfer(offset);
+        SPI_INTERFACE.transfer(offset);
 		// send a value of 0 to read the first byte returned:
-		SPI.transfer(dataToWrite);
+        SPI_INTERFACE.transfer(dataToWrite);
 		// decrement the number of bytes left to read:
 		// take the chip select high to de-select:
-		digitalWrite(chipSelectPin, HIGH);
+		DIGITAL_WRITE(chipSelectPin, HIGH);
 		break;
 		
 		//No way to check error on this write (Except to read back but that's not reliable)
@@ -362,7 +362,7 @@ status_t LIS3DHCore::writeRegister(uint8_t offset, uint8_t dataToWrite) {
 //  Construct with same rules as the core ( uint8_t busType, uint8_t inputArg )
 //
 //****************************************************************************//
-LIS3DH::LIS3DH( uint8_t busType, uint8_t inputArg ) : LIS3DHCore( busType, inputArg )
+LIS3DH::LIS3DH( uint8_t busType, CS_TYPE inputArg ) : LIS3DHCore( busType, inputArg )
 {
 	//Construct with these default settings
 	//ADC stuff
