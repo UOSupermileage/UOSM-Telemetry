@@ -10,6 +10,7 @@
 #include "CANDriver.h"
 #include "PollingSensorTask.hpp"
 #include "Accelerometer.hpp"
+#include "Config.h"
 
 #define DEFAULT_BUFFER_SIZE 1
 
@@ -23,7 +24,7 @@
 #define SENSOR_RPM 0
 
 #define LOGGER_SD 0
-#define LOGGER_IOT 1
+#define LOGGER_IOT 0
 
  /*
  * 0 == WiFi
@@ -82,6 +83,8 @@ void setup() {
 
     Serial.begin(115200);
 
+    delay(2000);
+
     DebugPrint("Initializing Telemetry System...");
 
 #ifndef UOSM_SECRETS
@@ -104,13 +107,26 @@ void setup() {
 
 #if SENSOR_ACCELEROMETER == 1
     accelerationSensor = new Accelerometer(DEFAULT_BUFFER_SIZE);
+
+    TelemetryPrint("Created accelerometer\n");
+
     accelerationSensor->addListener([](const acceleration_t & newValue){
+        TelemetryPrint("Received new acceleration: %f %f %f\n", newValue.x, newValue.y, newValue.z);
         iotMutex.execute([newValue]() {
             updateAcceleration(newValue);
         });
     });
 
+    TelemetryPrint("Added listener\n");
+
+    accelerationSensor->collect();
+
+    TelemetryPrint("Forced collection\n");
+
+    TelemetryPrint("Creating PollingSensorTask\n");
     accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 10,static_cast<osPriority_t>(5));
+
+    TelemetryPrint("Created accelerometer task\n");
 #endif
 
 #if SENSOR_PRESSURE == 1
@@ -195,6 +211,7 @@ void setup() {
 }
 
 void loop() {
+#if LOGGER_IOT == 1
     if (!iotMutex.getLocked()) {
         iotMutex.lock();
         periodicMotorOn();
@@ -203,6 +220,7 @@ void loop() {
     } else {
         rtos::ThisThread::sleep_for(DEFAULT_MUTEX_DELAY);
     }
+#endif
 }
 
 #ifdef __cplusplus

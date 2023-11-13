@@ -4,6 +4,7 @@
 #include "Sensor.hpp"
 #include "ApplicationTypes.h"
 #include "SparkFunLIS3DH.h"
+#include "Config.h"
 
 #ifdef MBED
 #include <Arduino_PortentaBreakout.h>
@@ -30,11 +31,14 @@ public:
     };
 
     void collect() override {
+        TelemetryPrint("Collecting Accelerometer data\n");
         acceleration_t acceleration;
 
         acceleration.x = handle.readFloatAccelX() * GRAVITY;
         acceleration.y = handle.readFloatAccelY() * GRAVITY;
         acceleration.z = handle.readFloatAccelZ() * GRAVITY;
+
+        TelemetryPrint("Collected Accelerometer data, %f %f %f\n", acceleration.x, acceleration.y, acceleration.z);
 
         add(acceleration);
     }

@@ -34,6 +34,7 @@ Distributed as-is; no warranty is given.
 
 #include "Wire.h"
 #include "SPI.h"
+#include "ApplicationTypes.h"
 
 //****************************************************************************//
 //
@@ -110,6 +111,7 @@ status_t LIS3DHCore::beginCore(void)
 		// start the SPI library:
         SPI_INTERFACE.begin();
         SPI_INTERFACE.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
+        SPI_INTERFACE.endTransaction()
 #else
 // probably __AVR__
 		// initalize the chip select pins:
@@ -273,6 +275,8 @@ status_t LIS3DHCore::readRegister(uint8_t* outputPointer, uint8_t offset) {
 		result = SPI_INTERFACE.transfer(0x00);
 		// take the chip select high to de-select:
 		DIGITAL_WRITE(chipSelectPin, HIGH);
+
+        DebugPrint("SPI Read %02x", result);
 		
 		if( result == 0xFF )
 		{

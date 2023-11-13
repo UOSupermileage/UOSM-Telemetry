@@ -6,9 +6,11 @@
 #define UOSM_TELEMETRY_POLLINGSENSORTASK_HPP
 
 #include "SensorTask.hpp"
+#include "Config.h"
 #include <Arduino.h>
 #include <cmsis.h>
 #include <rtos.h>
+#include <LibPrintf.h>
 
 template<typename T>
 class PollingSensorTask: public SensorTask {
@@ -19,8 +21,12 @@ private:
         auto* args = (PollingSensorTaskArgs*) parameters;
 
         for(;;) {
+            TelemetryPrint("PollingSensorTask loop\n");
             args->collector->collect();
-            rtos::ThisThread::sleep_for(args->pollingRate);
+
+            TelemetryPrint("Starting Thread Sleep for %d ms\n", args->pollingRate);
+            rtos::ThisThread::sleep_for(std::chrono::milliseconds(args->pollingRate));
+            TelemetryPrint("Ended Thread Sleep\n");
         }
     }
 
@@ -33,10 +39,18 @@ public:
     };
 
     PollingSensorTask(Sensor<T>* sensor, const uint16_t pollingRate, const char* name, uint32_t stackSize, osPriority_t priority) {
-        // TODO: Is this a memory leak?
+        // Not a memory leak because we use the args in the loop.
+        TelemetryPrint("Creating PollingSensorTask with pollingRate: %d\n", pollingRate);
+
         auto* args = new PollingSensorTaskArgs(sensor, pollingRate);
-        thread.set_priority(priority);
+
+        TelemetryPrint("Starting RTOS Thread\n");
         thread.start(mbed::callback(PollingSensorTask::loop, args));
+
+//        DebugPrint("Setting priority");
+//        thread.set_priority(priority);
+//
+//        DebugPrint("Set priority");
     }
 };
 
