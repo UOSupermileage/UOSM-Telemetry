@@ -6,6 +6,7 @@
 #include "UOSMCoreConfig.h"
 
 #include "InternalCommsModule.h"
+#include "Arduino_PortentaBreakout.h"
 #include <Arduino.h>
 
 #include <rtos.h>
@@ -17,19 +18,21 @@ uint16_t pollingRate;
 
 // RTOS Execution Loops
 [[noreturn]] void CANTask() {
-
     pinMode(MCP2515_CS_PIN, OUTPUT);
+
+    Breakout.SPI_0.begin();
 
     result_t isInitialized = RESULT_FAIL;
 
     while (true) {
         if (isInitialized == RESULT_FAIL) {
-            isInitialized = IComms_Init();
+            isInitialized = IComms_Init() ? RESULT_OK : RESULT_FAIL;
+
         } else {
             IComms_PeriodicReceive();
         }
 
-        rtos::ThisThread::sleep_for(pollingRate);
+        rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));
     }
 }
 
@@ -39,7 +42,6 @@ void CANInit(
         uint16_t _pollingRate
 ) {
     pollingRate = _pollingRate;
-    canThread.set_priority(priority);
     canThread.start(mbed::callback(CANTask));
 }
 

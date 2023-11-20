@@ -130,6 +130,7 @@ status_t LIS3DHCore::beginCore(void)
 		SPI.setDataMode(SPI_MODE3);
 
 #endif
+        ;
 		break;
 	default:
 		break;

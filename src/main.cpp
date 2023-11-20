@@ -16,12 +16,12 @@
 
 #define SENSOR_GPS 0
 #define SENSOR_VOLTAGE 0
-#define SENSOR_ACCELEROMETER 1
+#define SENSOR_ACCELEROMETER 0
 #define SENSOR_PRESSURE 0
-#define SENSOR_CAN_LOG 0
-#define SENSOR_THROTTLE 0
-#define SENSOR_SPEEDOMETER 0
-#define SENSOR_RPM 0
+#define SENSOR_CAN_LOG 1
+#define SENSOR_THROTTLE 1
+#define SENSOR_SPEEDOMETER 1
+#define SENSOR_RPM 1
 
 #define LOGGER_SD 0
 #define LOGGER_IOT 0
@@ -78,9 +78,6 @@ ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t>(DEFAULT_BUFFER_
 #endif
 
 void setup() {
-//    SPI.begin();
-//    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
-
     Serial.begin(115200);
 
     delay(2000);
@@ -218,7 +215,7 @@ void loop() {
         ArduinoCloud.update();
         iotMutex.unlock();
     } else {
-        rtos::ThisThread::sleep_for(DEFAULT_MUTEX_DELAY);
+        rtos::ThisThread::sleep_for(std::chrono::milliseconds(DEFAULT_MUTEX_DELAY));
     }
 #endif
 }

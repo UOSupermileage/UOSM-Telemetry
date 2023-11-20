@@ -8,6 +8,8 @@
 #include <SPI.h>
 #elif MBED
 #include <Arduino.h>
+#include <Arduino_PortentaBreakout.h>
+#include <LibPrintf.h>
 #endif
 
 #ifdef __cplusplus
@@ -20,7 +22,7 @@ void GPIO_DigitalWrite(uint8_t pin, uint8_t val) {
 #ifdef ESP32
     digitalWrite(pin, val);
 #elif MBED
-    digitalWrite(pin, val);
+    Breakout.digitalWrite((breakoutPin) pin, (PinStatus) val);
 #endif
 }
 
@@ -28,7 +30,7 @@ void SPI_Transfer(void *data, uint32_t size) {
 #ifdef ESP32
     SPI.transfer(data, size);
 #elif MBED
-//    SPI.transfer(data, size);
+    Breakout.SPI_0.transfer(data, size);
 #endif
 }
 
@@ -41,9 +43,9 @@ void ExternalSerialPrint(const char * message, ...) {
 #elif MBED
     va_list args;
     va_start(args, message);
-    sprintf(messageBuf, message, args);
-//    printf(message, args);
-    Serial.print(message);
+//    sprintf(messageBuf, message, args);
+    printf(message, args);
+//    Serial.print(message);
     va_end(args);
 #endif
 }
@@ -64,7 +66,7 @@ void ExternalSerialPrintln(const char * message, ...) {
     uint16_t len = vsprintf(messageBuf, message, args);
     messageBuf[len] = '\n';
     messageBuf[len+1] = '\r';
-    Serial.print(messageBuf);
+    printf(messageBuf, args);
     va_end(args);
 #endif
 }
