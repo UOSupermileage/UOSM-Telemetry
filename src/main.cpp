@@ -16,7 +16,7 @@
 
 #define SENSOR_GPS 0
 #define SENSOR_VOLTAGE 0
-#define SENSOR_ACCELEROMETER 0
+#define SENSOR_ACCELEROMETER 1
 #define SENSOR_PRESSURE 0
 #define SENSOR_CAN_LOG 1
 #define SENSOR_THROTTLE 1
@@ -24,7 +24,7 @@
 #define SENSOR_RPM 1
 
 #define LOGGER_SD 0
-#define LOGGER_IOT 0
+#define LOGGER_IOT 1
 
  /*
  * 0 == WiFi
@@ -80,7 +80,7 @@ ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t>(DEFAULT_BUFFER_
 void setup() {
     Serial.begin(115200);
 
-    delay(2000);
+    delay(250);
 
     DebugPrint("Initializing Telemetry System...");
 

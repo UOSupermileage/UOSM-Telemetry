@@ -27,12 +27,11 @@ uint16_t pollingRate;
     while (true) {
         if (isInitialized == RESULT_FAIL) {
             isInitialized = IComms_Init() ? RESULT_OK : RESULT_FAIL;
-
         } else {
             IComms_PeriodicReceive();
         }
 
-        rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));
+        rtos::ThisThread::sleep_for(std::chrono::milliseconds(pollingRate));
     }
 }
 

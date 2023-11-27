@@ -8,7 +8,7 @@
 
 #ifdef MBED
 #include <Arduino_PortentaBreakout.h>
-#define CS GPIO_0
+#define CS GPIO_1
 #else
 #define CS 0
 #endif
