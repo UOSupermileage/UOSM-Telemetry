@@ -7,11 +7,7 @@
 
 #include "Identifiable.hpp"
 #include "CANMessageLookUpModule.h"
-
-enum CANLogEntryFormat {
-    CAN_DECIMAL,
-    CAN_HEX
-};
+#include "ApplicationTypes.h"
 
 /**
  * @class CANLogEntry
