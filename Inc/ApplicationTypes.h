@@ -33,6 +33,11 @@ typedef enum {
 } result_t;
 
 typedef enum {
+    CAN_DECIMAL,
+    CAN_HEX
+} CANLogEntryFormat;
+
+typedef enum {
     MOTOR_LOW_SPEED,
     MOTOR_HIGH_SPEED
 } MotorCode;
