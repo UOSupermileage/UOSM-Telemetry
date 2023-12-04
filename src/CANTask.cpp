@@ -26,6 +26,7 @@ uint16_t pollingRate;
 
     while (true) {
         if (isInitialized == RESULT_FAIL) {
+            printf("Initializing CAN Hardware");
             isInitialized = IComms_Init() ? RESULT_OK : RESULT_FAIL;
         } else {
             IComms_PeriodicReceive();

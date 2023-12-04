@@ -66,6 +66,11 @@ void ExternalSerialPrintln(const char * message, ...) {
     uint16_t len = vsprintf(messageBuf, message, args);
     messageBuf[len] = '\n';
     messageBuf[len+1] = '\r';
+
+    for (uint8_t i = len+2; i < MAX_SERIAL_PRINT_LENGTH; i++) {
+        messageBuf[i] = 0;
+    }
+
     printf(messageBuf, args);
     va_end(args);
 #endif

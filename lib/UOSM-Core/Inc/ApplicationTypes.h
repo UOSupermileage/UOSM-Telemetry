@@ -15,7 +15,6 @@ extern "C" {
 #endif
 
 #include "SerialDebugDriver.h"
-
 #define DebugPrint(...) SerialPrintln(__VA_ARGS__)
 
 #include <stdint.h>

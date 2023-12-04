@@ -11,6 +11,7 @@
 #include "PollingSensorTask.hpp"
 #include "Accelerometer.hpp"
 #include "Config.h"
+#include "LoggerTask.hpp"
 
 #define DEFAULT_BUFFER_SIZE 1
 
@@ -23,7 +24,7 @@
 #define SENSOR_SPEEDOMETER 1
 #define SENSOR_RPM 1
 
-#define LOGGER_SD 0
+#define LOGGER_SD 1
 #define LOGGER_IOT 1
 
  /*
@@ -80,7 +81,7 @@ ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t>(DEFAULT_BUFFER_
 void setup() {
     Serial.begin(115200);
 
-    delay(250);
+    delay(2500);
 
     DebugPrint("Initializing Telemetry System...");
 
@@ -190,11 +191,12 @@ void setup() {
 #endif
 
 #if LOGGER_SD == 1
-    LoggerInit(SD_CS_PIN, SD_SIGNAL_LIGHT_PIN, SD_DETECT_PIN, SD_LOG_BUTTON_PIN, []() {
+    DebugPrint("Calling LoggerInit");
+    LoggerInit(1000, []() {
         char* row = new char[100];
-        sprintf(row, "%d,%f,%f,%d,%f,%f", xTaskGetTickCount(), (float) throttle, (float) speed, motorRPM, (float) batteryCurrent, (float) batteryVoltage);
+        sprintf(row, "%d,%f,%f,%d,%f,%f\n", 0, (float) throttle, (float) speed, motorRPM, (float) batteryCurrent, (float) batteryVoltage);
         return row;
-    }, "timestamp,throttle,speed,rpm,current,voltage", SD_LOGGER_STACK_SIZE, SD_LOGGER_PRIORITY, SD_LOGGING_RATE);
+    }, "timestamp,throttle,speed,rpm,current,voltage\n");
 #endif
 
 #if LOGGER_IOT == 1

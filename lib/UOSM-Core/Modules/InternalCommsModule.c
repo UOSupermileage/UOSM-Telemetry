@@ -113,7 +113,6 @@ PUBLIC void IComms_PeriodicReceive() {
 			if (lookupTableIndex < NUMBER_CAN_MESSAGE_IDS) {
 				// DebugPrint("%s Executing callback", ICM_TAG);
                 // Execute callback for message
-                DebugPrint("Executing CAN Callback");
 				CANMessageLookUpTable[lookupTableIndex].canMessageCallback(&rxMsg);
 			} else {
 				DebugPrint("%s Unknown message id [%x], index [%d]", ICM_TAG, rxMsg.standardMessageID, lookupTableIndex);
