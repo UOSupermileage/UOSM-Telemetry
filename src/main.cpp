@@ -19,7 +19,7 @@
 #define SENSOR_VOLTAGE 0
 #define SENSOR_ACCELEROMETER 1
 #define SENSOR_PRESSURE 0
-#define SENSOR_CAN_LOG 1
+#define SENSOR_CAN_LOG 0
 #define SENSOR_THROTTLE 1
 #define SENSOR_SPEEDOMETER 1
 #define SENSOR_RPM 1
@@ -194,9 +194,9 @@ void setup() {
     DebugPrint("Calling LoggerInit");
     LoggerInit(1000, []() {
         char* row = new char[100];
-        sprintf(row, "%d,%f,%f,%d,%f,%f\n", 0, (float) throttle, (float) speed, motorRPM, (float) batteryCurrent, (float) batteryVoltage);
+        sprintf(row, "%d,%f,%f,%d,%f,%f,%f,%f,%f\n", 0, (float) throttle, (float) speed, motorRPM, (float) batteryCurrent, (float) batteryVoltage, (float) accelerationX, (float) accelerationY, (float) accelerationZ);
         return row;
-    }, "timestamp,throttle,speed,rpm,current,voltage\n");
+    }, "timestamp,throttle,speed,rpm,current,voltage,acc_x,acc_y,acc_z\n");
 #endif
 
 #if LOGGER_IOT == 1
