@@ -11,10 +11,20 @@
 #include <Arduino_ConnectionHandler.h>
 #include "Mutex.hpp"
 #include "Secrets.h"
+#include <vector>
 
 #define MOTOR_ON_TIMEOUT 500
 
 Mutex iotMutex;
+
+struct LapData {
+    float totalJoules;
+    int totalTime;
+
+    LapData(float totalJoules, int totalTime): totalJoules(totalJoules), totalTime(totalTime) {}
+};
+
+std::vector<LapData> laps(1, LapData(0, 0));
 
 // Name of variables is important. They map to definitions in our IOT Cloud Dashboard
 CloudElectricCurrent batteryCurrent;
@@ -64,8 +74,12 @@ void initProperties(){
     ArduinoCloud.addProperty(gpsCoordinates, READ, ON_CHANGE, NULL);
 }
 
-void updateBatteryVoltage(float voltage) {
+void updateBattery(float voltage, float current) {
     batteryVoltage = voltage;
+    batteryCurrent = current;
+
+    LapData& currentLap = laps.back();
+    currentLap.totalJoules += voltage * current;
 }
 
 void updateAcceleration(acceleration_t acceleration){
@@ -113,6 +127,14 @@ void updateSpeed(speed_t s) {
 
 void updateThrottle(percentage_t p) {
     throttle = (float) p / 10;
+}
+
+void triggerLap() {
+    // Construct a new LapData
+    LapData& currentLap = laps.back();
+    currentLap.totalTime = 0;
+
+    laps.emplace_back(0, 0);
 }
 
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
