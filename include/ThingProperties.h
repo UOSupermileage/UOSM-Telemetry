@@ -24,119 +24,144 @@ struct LapData {
     LapData(float totalJoules, int totalTime): totalJoules(totalJoules), totalTime(totalTime) {}
 };
 
-std::vector<LapData> laps(1, LapData(0, 0));
+struct MotorData {
+    int rpm = 0;
+    bool isOn = false;
+    uint32_t heartbeatTimestamp = 0;
+};
 
-// Name of variables is important. They map to definitions in our IOT Cloud Dashboard
-CloudElectricCurrent batteryCurrent;
-CloudElectricPotential batteryVoltage;
+struct GPSData {
+    CloudLocation coordinates;
+    float speed = 0; // km/h
+    float heading = 0;
+    float altitude = 0;
+};
 
-String canMessage;
-int motorRPM;
-CloudPercentage throttle;
+class Cloud {
+private:
+    std::vector<LapData> laps = std::vector<LapData>(1, LapData(0, 0));;
 
-// Acceleration Sensor
-CloudAcceleration accelerationX;
-CloudAcceleration accelerationY;
-CloudAcceleration accelerationZ;
+    CloudElectricCurrent batteryCurrent;
+    CloudElectricPotential batteryVoltage;
 
-// Pressure Sensor
-CloudPressure pressure;
-CloudTemperatureSensor temperature;
+    String canMessage;
+    CloudPercentage throttle;
 
-// GPS Sensor
-CloudLocation gpsCoordinates;
-float gps_speed; // in km / h
-float heading;
-float altitude;
+    MotorData motor;
 
-// CAN Sensor
-CloudVelocity speed;
+    // Acceleration Sensor
+    CloudAcceleration accelerationX;
+    CloudAcceleration accelerationY;
+    CloudAcceleration accelerationZ;
 
-// Events
-bool motorOn = false;
-uint32_t motorOnTimestamp;
+    // Pressure Sensor
+    CloudPressure pressure;
+    CloudTemperatureSensor temperature;
 
-void initProperties(){
-    ArduinoCloud.setThingId(DEVICE_LOGIN_NAME);
+    GPSData gps;
 
-    ArduinoCloud.addProperty(accelerationX, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(accelerationY, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(accelerationZ, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(canMessage, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(batteryCurrent, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(batteryVoltage, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(temperature, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(motorRPM, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(throttle, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(pressure, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(speed, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(motorOn, READ, ON_CHANGE, NULL);
-    ArduinoCloud.addProperty(gpsCoordinates, READ, ON_CHANGE, NULL);
-}
+    // CAN Sensor
+    CloudVelocity speed;
 
-void updateBattery(float voltage, float current) {
-    batteryVoltage = voltage;
-    batteryCurrent = current;
+    Cloud() {
+        ArduinoCloud.setThingId(DEVICE_LOGIN_NAME);
 
-    LapData& currentLap = laps.back();
-    currentLap.totalJoules += voltage * current;
-}
-
-void updateAcceleration(acceleration_t acceleration){
-    accelerationX = acceleration.x;
-    accelerationY = acceleration.y;
-    accelerationZ = acceleration.z;
-}
-
-void updateCanMessages(const char* message) {
-    canMessage = message;
-}
-
-void updatePressure(pressure_t p){
-    pressure = p.pressure;
-    temperature = p.temp;
-}
-
-void updateGPS(gps_coordinate_t coordinate) {
-    gpsCoordinates = { coordinate.longitude, coordinate.latitude };
-    gps_speed = coordinate.speed_kmh;
-    heading = coordinate.heading;
-    altitude = coordinate.altitude;
-}
-
-void updateRPM(velocity_t r) {
-    // Store inverted because the rpm is inverse
-    motorRPM = r * -1;
-}
-
-void updateMotorOn(boolean isOn) {
-    motorOn = isOn;
-    motorOnTimestamp = 0; //TODO: Fix this
-}
-
-void periodicMotorOn() {
-    if (motorOn && (motorOnTimestamp + MOTOR_ON_TIMEOUT) < 0) {
-        motorOn = false;
+        ArduinoCloud.addProperty(accelerationX, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(accelerationY, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(accelerationZ, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(canMessage, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(batteryCurrent, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(batteryVoltage, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(temperature, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(motor.rpm, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(throttle, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(pressure, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(speed, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(motor.isOn, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(gps.coordinates, READ, ON_CHANGE, NULL);
     }
-}
 
-void updateSpeed(speed_t s) {
-    // store in km / h
-    speed = (float) s / 1000;
-}
+    static Cloud* instance;
+public:
+    static auto shared() -> Cloud& {
+        if (instance == nullptr) {
+            instance = new Cloud();
+        }
 
-void updateThrottle(percentage_t p) {
-    throttle = (float) p / 10;
-}
+        return *instance;
+    }
 
-void triggerLap() {
-    // Construct a new LapData
-    LapData& currentLap = laps.back();
-    currentLap.totalTime = 0;
+    float getBatteryVoltage() { return batteryVoltage; }
+    float getBatteryCurrent() { return batteryCurrent; }
+    float getAccelerationX() { return accelerationX; }
+    float getAccelerationY() { return accelerationY; }
+    float getAccelerationZ() { return accelerationZ; }
+    int getRPM() { return motor.rpm; }
+    float getThrottle() { return throttle; }
+    float getSpeed() { return speed; }
 
-    laps.emplace_back(0, 0);
-}
+    void updateBattery(float voltage, float current) {
+        batteryVoltage = voltage;
+        batteryCurrent = current;
 
-WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
+        LapData& currentLap = laps.back();
+        currentLap.totalJoules += voltage * current;
+    }
+
+    void updateAcceleration(acceleration_t acceleration){
+        accelerationX = acceleration.x;
+        accelerationY = acceleration.y;
+        accelerationZ = acceleration.z;
+    }
+
+    void updateCanMessages(const char* message) {
+        canMessage = message;
+    }
+
+    void updatePressure(pressure_t p){
+        pressure = p.pressure;
+        temperature = p.temp;
+    }
+
+    void updateGPS(gps_coordinate_t coordinate) {
+        gps.coordinates = { coordinate.longitude, coordinate.latitude };
+        gps.speed = coordinate.speed_kmh;
+        gps.heading = coordinate.heading;
+        gps.altitude = coordinate.altitude;
+    }
+
+    void updateRPM(velocity_t r) {
+        // Store inverted because the rpm is inverse
+        motor.rpm = r * -1;
+    }
+
+    void updateMotorOn(boolean isOn) {
+        motor.isOn = isOn;
+        motor.heartbeatTimestamp = 0; //TODO: Fix this
+    }
+
+    void periodicMotorOn() {
+        if (motor.isOn && (motor.heartbeatTimestamp + MOTOR_ON_TIMEOUT) < 0) {
+            motor.isOn = false;
+        }
+    }
+
+    void updateSpeed(speed_t s) {
+        // store in km / h
+        speed = (float) s / 1000;
+    }
+
+    void updateThrottle(percentage_t p) {
+        throttle = (float) p / 10;
+    }
+
+    void triggerLap() {
+        // Construct a new LapData
+        LapData& currentLap = laps.back();
+        currentLap.totalTime = 0;
+
+        laps.emplace_back(0, 0);
+    }
+};
 
 #endif //UOSM_TELEMETRY_THINGPROPERTIES_H

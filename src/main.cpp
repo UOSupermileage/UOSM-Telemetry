@@ -3,29 +3,30 @@
 #include "ApplicationTypes.h"
 #include "ThingProperties.h"
 
-#include "PressureSensor.hpp"
 #include "ValueSensor.hpp"
 #include "CANLogEntry.hpp"
 #include "CANTask.hpp"
 #include "CANDriver.h"
 #include "PollingSensorTask.hpp"
-#include "Accelerometer.hpp"
 #include "Config.h"
 #include "LoggerTask.hpp"
 
+Cloud* Cloud::instance = nullptr;
+
+
 constexpr uint8_t defaultBufferSize = 1;
 
-#define SENSOR_GPS 0
-#define SENSOR_VOLTAGE 0
-#define SENSOR_ACCELEROMETER 1
-#define SENSOR_PRESSURE 0
-#define SENSOR_CAN_LOG 0
-#define SENSOR_THROTTLE 1
-#define SENSOR_SPEEDOMETER 1
-#define SENSOR_RPM 1
+//#define SENSOR_GPS
+//#define SENSOR_VOLTAGE
+//#define SENSOR_ACCELEROMETER
+//#define SENSOR_PRESSURE
+//#define SENSOR_CAN_LOG
+//#define SENSOR_THROTTLE
+//#define SENSOR_SPEEDOMETER
+//#define SENSOR_RPM
 
-#define LOGGER_SD 1
-#define LOGGER_IOT 1
+#define LOGGER_SD
+#define LOGGER_IOT
 
 enum class InternetConnection {
     disabled = 0,
@@ -35,69 +36,78 @@ enum class InternetConnection {
 
 constexpr InternetConnection connection = InternetConnection::wifi;
 
-#if SENSOR_GPS == 1
-GPSSensor* gpsSensor;
-PollingSensorTask<gps_coordinate_t>* gpsSensorTask;
+WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
+
+#ifdef SENSOR_GPS
+#include "GPSSensor.hpp"
+
+std::unique_ptr<GPSSensor> gpsSensor;
+std::unique_ptr<PollingSensorTask<gps_coordinate_t>> gpsSensorTask;
 #endif
 
-#if SENSOR_VOLTAGE == 1
-VoltageSensor* voltageSensor;
-PollingSensorTask<voltage_t>* voltageSensorTask;
+#ifdef SENSOR_VOLTAGE
+#include "VoltageSensor.hpp"
+
+std::unique_ptr<VoltageSensor> voltageSensor;
+std::unique_ptr<PollingSensorTask<voltage_t>> voltageSensorTask;
 #endif
 
-#if SENSOR_ACCELEROMETER == 1
-Accelerometer* accelerationSensor;
-PollingSensorTask<acceleration_t>* accelerationSensorTask;
+#ifdef SENSOR_ACCELEROMETER
+#include "Accelerometer.hpp"
+
+std::unique_ptr<Accelerometer> accelerationSensor;
+std::unique_ptr<PollingSensorTask<acceleration_t>> accelerationSensorTask;
 #endif
 
-#if SENSOR_PRESSURE == 1
-PressureSensor* pressureSensor;
-PollingSensorTask<pressure_t>* pressureSensorTask;
+#ifdef SENSOR_PRESSURE
+#include "PressureSensor.hpp"
+#include "Conversions.h"
+
+std::unique_ptr<PressureSensor> pressureSensor;
+std::unique_ptr<PollingSensorTask<pressure_t>> pressureSensorTask;
 #endif
 
 // CAN Values
-#if SENSOR_CAN_LOG == 1
+#ifdef SENSOR_CAN_LOG
 ValueSensor<CANLogEntry*>* canLogsSensor = new ValueSensor<CANLogEntry*>(defaultBufferSize);
 #endif
 
-#if SENSOR_THROTTLE == 1
-ValueSensor<percentage_t>* throttleSensor = new ValueSensor<percentage_t>(defaultBufferSize);
+#ifdef SENSOR_THROTTLE
+std::unique_ptr<ValueSensor<percentage_t>> throttleSensor = std::make_unique<ValueSensor<percentage_t>>(defaultBufferSize);
 #endif
 
-#if SENSOR_SPEEDOMETER == 1
-ValueSensor<speed_t>* speedSensor = new ValueSensor<speed_t>(defaultBufferSize);
+#ifdef SENSOR_SPEEDOMETER
+std::unique_ptr<ValueSensor<speed_t>> speedSensor = std::make_unique<ValueSensor<speed_t>>(defaultBufferSize);
 #endif
 
-#if SENSOR_RPM
-ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t>(defaultBufferSize);
+#ifdef SENSOR_RPM
+std::unique_ptr<ValueSensor<velocity_t>> rpmSensor = std::make_unique<ValueSensor<velocity_t >>(defaultBufferSize);
 #endif
 
 void setup() {
     Serial.begin(115200);
 
-    delay(2500);
-
-    DebugPrint("Initializing Telemetry System...");
+    TelemetryPrint("Initializing Telemetry System...");
 
 #ifndef UOSM_SECRETS
-    DebugPrint("Failed to find secrets... Make sure to create a Secrets.h file. Aborting!");
+    TelemetryPrint("Failed to find secrets... Make sure to create a Secrets.h file. Aborting!");
     while (true) {}
 #endif
 
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
 
-#if SENSOR_VOLTAGE == 1
-    voltageSensor = new VoltageSensor(defaultBufferSize);
+#ifdef SENSOR_VOLTAGE
+    voltageSensor = std::make_unique<VoltageSensor>(defaultBufferSize);
     voltageSensor->addListener([](const voltage_t& newValue) {
         iotMutex.execute([newValue]() {
             updateBatteryVoltage(convertVoltageToFloat(newValue));
         });
     });
 
-    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, 5);
+    voltageSensorTask = std::make_unique<PollingSensorTask<voltage_t>>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, 5);
 #endif
 
-#if SENSOR_ACCELEROMETER == 1
+#ifdef SENSOR_ACCELEROMETER
     accelerationSensor = new Accelerometer(defaultBufferSize);
 
     TelemetryPrint("Created accelerometer\n");
@@ -184,17 +194,19 @@ void setup() {
      CANInit(1024 * 10, (osPriority_t) 5, 100);
 #endif
 
-#if LOGGER_SD == 1
+#ifdef LOGGER_SD
     DebugPrint("Calling LoggerInit");
     LoggerInit(1000, []() {
         char* row = new char[100];
-        sprintf(row, "%d,%f,%f,%d,%f,%f,%f,%f,%f\n", 0, (float) throttle, (float) speed, motorRPM, (float) batteryCurrent, (float) batteryVoltage, (float) accelerationX, (float) accelerationY, (float) accelerationZ);
+
+        Cloud& cloud = Cloud::shared();
+
+        sprintf(row, "%d,%f,%f,%d,%f,%f,%f,%f,%f\n", 0, cloud.getThrottle(), cloud.getSpeed(), cloud.getRPM(), cloud.getBatteryCurrent(), cloud.getBatteryVoltage(), cloud.getAccelerationX(), cloud.getAccelerationY(), cloud.getAccelerationZ());
         return row;
     }, "timestamp,throttle,speed,rpm,current,voltage,acc_x,acc_y,acc_z\n");
 #endif
 
-#if LOGGER_IOT == 1
-    initProperties();
+#ifdef LOGGER_IOT
     ArduinoCloud.begin(ArduinoIoTPreferredConnection);
     setDebugMessageLevel(2);
     ArduinoCloud.printDebugInfo();
@@ -204,10 +216,11 @@ void setup() {
 }
 
 void loop() {
-#if LOGGER_IOT == 1
+#ifdef LOGGER_IOT
     if (!iotMutex.getLocked()) {
         iotMutex.lock();
-        periodicMotorOn();
+        // TODO: Is there a cleaner way of doing this
+        Cloud::shared().periodicMotorOn();
         ArduinoCloud.update();
         iotMutex.unlock();
     } else {
@@ -219,6 +232,7 @@ void loop() {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /************
  * Adapter to convert CAN Callbacks into Sensors
  ************/
@@ -291,7 +305,7 @@ void EventDataCallback(iCommsMessage_t *msg) {
 
         switch (code) {
             case DEADMAN:
-                updateMotorOn(status);
+                Cloud::shared().updateMotorOn(status);
             default:
                 break;
         }
