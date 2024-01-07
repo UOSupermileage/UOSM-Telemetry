@@ -11,9 +11,6 @@
 #include "Config.h"
 #include "LoggerTask.hpp"
 
-Cloud* Cloud::instance = nullptr;
-
-
 constexpr uint8_t defaultBufferSize = 1;
 
 //#define SENSOR_GPS
@@ -28,7 +25,7 @@ constexpr uint8_t defaultBufferSize = 1;
 #define LOGGER_SD
 #define LOGGER_IOT
 
-enum class InternetConnection {
+enum class InternetConnection: uint8_t {
     disabled = 0,
     wifi = 1,
     cellular = 2
@@ -198,15 +195,13 @@ void setup() {
     DebugPrint("Calling LoggerInit");
     LoggerInit(1000, []() {
         char* row = new char[100];
-
-        Cloud& cloud = Cloud::shared();
-
-        sprintf(row, "%d,%f,%f,%d,%f,%f,%f,%f,%f\n", 0, cloud.getThrottle(), cloud.getSpeed(), cloud.getRPM(), cloud.getBatteryCurrent(), cloud.getBatteryVoltage(), cloud.getAccelerationX(), cloud.getAccelerationY(), cloud.getAccelerationZ());
+        sprintf(row, "%d,%f,%f,%d,%f,%f,%f,%f,%f\n", 0, getThrottle(), getSpeed(), getRPM(), getBatteryCurrent(), getBatteryVoltage(), getAccelerationX(), getAccelerationY(), getAccelerationZ());
         return row;
     }, "timestamp,throttle,speed,rpm,current,voltage,acc_x,acc_y,acc_z\n");
 #endif
 
 #ifdef LOGGER_IOT
+    SetupThing();
     ArduinoCloud.begin(ArduinoIoTPreferredConnection);
     setDebugMessageLevel(2);
     ArduinoCloud.printDebugInfo();
@@ -220,7 +215,7 @@ void loop() {
     if (!iotMutex.getLocked()) {
         iotMutex.lock();
         // TODO: Is there a cleaner way of doing this
-        Cloud::shared().periodicMotorOn();
+        periodicMotorOn();
         ArduinoCloud.update();
         iotMutex.unlock();
     } else {
@@ -305,7 +300,7 @@ void EventDataCallback(iCommsMessage_t *msg) {
 
         switch (code) {
             case DEADMAN:
-                Cloud::shared().updateMotorOn(status);
+                updateMotorOn(status);
             default:
                 break;
         }
