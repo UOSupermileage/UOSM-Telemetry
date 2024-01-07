@@ -13,7 +13,7 @@
 #include "Config.h"
 #include "LoggerTask.hpp"
 
-#define DEFAULT_BUFFER_SIZE 1
+constexpr uint8_t defaultBufferSize = 1;
 
 #define SENSOR_GPS 0
 #define SENSOR_VOLTAGE 0
@@ -27,19 +27,13 @@
 #define LOGGER_SD 1
 #define LOGGER_IOT 1
 
- /*
- * 0 == WiFi
- * 1 == Cellular
- */
-#define INTERNET_CONNECTION 0
+enum class InternetConnection {
+    disabled = 0,
+    wifi = 1,
+    cellular = 2
+};
 
-#define SD_CS_PIN 18
-#define SD_SIGNAL_LIGHT_PIN 0
-#define SD_DETECT_PIN 0
-#define SD_LOG_BUTTON_PIN 17
-#define SD_LOGGER_STACK_SIZE 10240
-#define SD_LOGGER_PRIORITY 5
-#define SD_LOGGING_RATE 200
+constexpr InternetConnection connection = InternetConnection::wifi;
 
 #if SENSOR_GPS == 1
 GPSSensor* gpsSensor;
@@ -63,19 +57,19 @@ PollingSensorTask<pressure_t>* pressureSensorTask;
 
 // CAN Values
 #if SENSOR_CAN_LOG == 1
-ValueSensor<CANLogEntry*>* canLogsSensor = new ValueSensor<CANLogEntry*>(DEFAULT_BUFFER_SIZE);
+ValueSensor<CANLogEntry*>* canLogsSensor = new ValueSensor<CANLogEntry*>(defaultBufferSize);
 #endif
 
 #if SENSOR_THROTTLE == 1
-ValueSensor<percentage_t>* throttleSensor = new ValueSensor<percentage_t>(DEFAULT_BUFFER_SIZE);
+ValueSensor<percentage_t>* throttleSensor = new ValueSensor<percentage_t>(defaultBufferSize);
 #endif
 
 #if SENSOR_SPEEDOMETER == 1
-ValueSensor<speed_t>* speedSensor = new ValueSensor<speed_t>(DEFAULT_BUFFER_SIZE);
+ValueSensor<speed_t>* speedSensor = new ValueSensor<speed_t>(defaultBufferSize);
 #endif
 
 #if SENSOR_RPM
-ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t>(DEFAULT_BUFFER_SIZE);
+ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t>(defaultBufferSize);
 #endif
 
 void setup() {
@@ -93,7 +87,7 @@ void setup() {
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
 
 #if SENSOR_VOLTAGE == 1
-    voltageSensor = new VoltageSensor(DEFAULT_BUFFER_SIZE);
+    voltageSensor = new VoltageSensor(defaultBufferSize);
     voltageSensor->addListener([](const voltage_t& newValue) {
         iotMutex.execute([newValue]() {
             updateBatteryVoltage(convertVoltageToFloat(newValue));
@@ -104,7 +98,7 @@ void setup() {
 #endif
 
 #if SENSOR_ACCELEROMETER == 1
-    accelerationSensor = new Accelerometer(DEFAULT_BUFFER_SIZE);
+    accelerationSensor = new Accelerometer(defaultBufferSize);
 
     TelemetryPrint("Created accelerometer\n");
 
@@ -128,7 +122,7 @@ void setup() {
 #endif
 
 #if SENSOR_PRESSURE == 1
-    pressureSensor = new PressureSensor(DEFAULT_BUFFER_SIZE);
+    pressureSensor = new PressureSensor(defaultBufferSize);
     pressureSensor->addListener([](const pressure_t & newValue){
         iotMutex.execute([newValue]() {
             updatePressure(newValue);
@@ -177,7 +171,7 @@ void setup() {
 #endif
 
 #if SENSOR_GPS == 1
-    gpsSensor = new GPSSensor(fona, DEFAULT_BUFFER_SIZE);
+    gpsSensor = new GPSSensor(fona, defaultBufferSize);
     gpsSensor->addListener([](const gps_coordinate_t& newValue) {
         iotMutex.execute([newValue]() {
             updateGPS(newValue);
