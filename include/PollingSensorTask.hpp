@@ -21,12 +21,12 @@ private:
         auto* args = (PollingSensorTaskArgs*) parameters;
 
         for(;;) {
-            TelemetryPrint("PollingSensorTask loop\n");
+            DebugPrint("PollingSensorTask loop\n");
             args->collector->collect();
 
-            TelemetryPrint("Starting Thread Sleep for %d ms\n", args->pollingRate);
+            DebugPrint("Starting Thread Sleep for %d ms\n", args->pollingRate);
             rtos::ThisThread::sleep_for(std::chrono::milliseconds(args->pollingRate));
-            TelemetryPrint("Ended Thread Sleep\n");
+            DebugPrint("Ended Thread Sleep\n");
         }
     }
 
@@ -40,11 +40,11 @@ public:
 
     PollingSensorTask(Sensor<T>* sensor, const uint16_t pollingRate, const char* name, uint32_t stackSize, osPriority_t priority) {
         // Not a memory leak because we use the args in the loop.
-        TelemetryPrint("Creating PollingSensorTask with pollingRate: %d\n", pollingRate);
+        DebugPrint("Creating PollingSensorTask with pollingRate: %d\n", pollingRate);
 
         auto* args = new PollingSensorTaskArgs(sensor, pollingRate);
 
-        TelemetryPrint("Starting RTOS Thread\n");
+        DebugPrint("Starting RTOS Thread\n");
         thread.start(mbed::callback(PollingSensorTask::loop, args));
 
 //        DebugPrint("Setting priority");

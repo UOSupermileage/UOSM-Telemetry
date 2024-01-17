@@ -8,6 +8,9 @@
 #define DEFAULT_MUTEX_DELAY 50
 #define DEFAULT_MUTEX_RETRIES 6
 
+#include <functional>
+#include <mbed.h>
+
 /**
  * Ensure that only one core can access a protected resource at once.
  */
