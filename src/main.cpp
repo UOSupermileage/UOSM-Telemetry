@@ -14,7 +14,7 @@
 constexpr uint32_t serialBaudrate = 115200;
 constexpr uint8_t defaultBufferSize = 1;
 
-#define SENSOR_GPS 0
+#define SENSOR_GPS 1
 #define SENSOR_VOLTAGE 1
 #define SENSOR_ACCELEROMETER 1
 #define SENSOR_PRESSURE 1
@@ -161,11 +161,11 @@ void setup() {
 #endif
 
 #if SENSOR_GPS == 1
-    gpsSensor = new GPSSensor(fona, defaultBufferSize);
+    gpsSensor = new GPSSensor(Serial, defaultBufferSize);
     gpsSensor->addListener([](const gps_coordinate_t& newValue) {
         CloudDatabase::instance.updateGPS(newValue);
     });
-    gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, 5);
+    gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, static_cast<osPriority_t>(5));
 #endif
 
 #if SENSOR_CAN_LOG == 1 || SENSOR_RPM == 1 || SENSOR_SPEEDOMETER == 1 || SENSOR_THROTTLE == 1
