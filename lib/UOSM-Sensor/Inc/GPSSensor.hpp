@@ -16,7 +16,7 @@
 
 class GPSSensor: public Sensor<gps_coordinate_t> {
 private:
-    TinyGsm modem;
+    TinyGsm& modem;
 
     float lat      = 0;
     float lon      = 0;
@@ -33,7 +33,7 @@ private:
     int   sec      = 0;
 
 public:
-    GPSSensor(HardwareSerial& serial, uint8_t bufferSize): Sensor<gps_coordinate_t>(bufferSize), modem(serial)  {
+    GPSSensor(TinyGsm& modem, uint8_t bufferSize): Sensor<gps_coordinate_t>(bufferSize), modem(modem) {
         DebugPrint("Creating GPS Sensor");
         modem.enableGPS();
     }

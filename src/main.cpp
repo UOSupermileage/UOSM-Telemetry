@@ -16,6 +16,7 @@ constexpr uint8_t defaultBufferSize = 1;
 
 #define SENSOR_GPS 1
 #define SENSOR_VOLTAGE 1
+#define SENSOR_CURRENT 1
 #define SENSOR_ACCELEROMETER 1
 #define SENSOR_PRESSURE 1
 #define SENSOR_CAN_LOG 0
@@ -39,6 +40,14 @@ WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
 #if SENSOR_GPS == 1
 #include "GPSSensor.hpp"
 
+#ifdef DUMP_AT_COMMANDS
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm        modem(debugger);
+#else
+TinyGsm*        modem;
+#endif
+
 GPSSensor* gpsSensor;
 PollingSensorTask<gps_coordinate_t>* gpsSensorTask;
 #endif
@@ -48,6 +57,14 @@ PollingSensorTask<gps_coordinate_t>* gpsSensorTask;
 
 VoltageSensor* voltageSensor;
 PollingSensorTask<voltage_t>* voltageSensorTask;
+#endif
+
+#if SENSOR_CURRENT == 1
+#include "VoltageSensor.hpp"
+
+// The current sensor is just an ADS on the current sensor so it's technically a voltage reading that's extrapolated back into current output
+VoltageSensor* currentSensor;
+PollingSensorTask<voltage_t>* currentSensorTask;
 #endif
 
 #if SENSOR_ACCELEROMETER == 1
@@ -61,8 +78,7 @@ PollingSensorTask<acceleration_t>* accelerationSensorTask;
 #include "PressureSensor.hpp"
 #include "Conversions.h"
 
-PressureSensor* pressureSensor;
-PollingSensorTask<pressure_t>* pressureSensorTask;
+ValueSensor<pressure_t>* pressureSensor = new ValueSensor<pressure_t>(defaultBufferSize);
 #endif
 
 // CAN Values
@@ -95,12 +111,22 @@ void setup() {
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
 
 #if SENSOR_VOLTAGE == 1
-    voltageSensor = new VoltageSensor(defaultBufferSize);
+    voltageSensor = new VoltageSensor(VoltageSensor::VoltageSensorMode::Differential_0_1, 15, 14, 0x40, defaultBufferSize);
     voltageSensor->addListener([](const voltage_t& newValue) {
         CloudDatabase::instance.updateBatteryVoltage(convertVoltageToFloat(newValue));
     });
 
     voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, static_cast<osPriority_t>(5));
+#endif
+
+#if SENSOR_CURRENT == 1
+    currentSensor = new VoltageSensor(VoltageSensor::VoltageSensorMode::Differential_2_3, 15, 14, 0x40, defaultBufferSize);
+    currentSensor->addListener([](const voltage_t& newValue) {
+
+        // TODO Convert voltage into a current reading
+
+       CloudDatabase::instance.updateBatteryCurrent(newValue * 2);
+    });
 #endif
 
 #if SENSOR_ACCELEROMETER == 1
@@ -126,12 +152,9 @@ void setup() {
 #endif
 
 #if SENSOR_PRESSURE == 1
-    pressureSensor = new PressureSensor(defaultBufferSize);
     pressureSensor->addListener([](const pressure_t & newValue){
         CloudDatabase::instance.updatePressure(newValue);
     });
-
-    pressureSensorTask = new PollingSensorTask<pressure_t>(pressureSensor, 200, "T_PressureSensor", 1024 * 10, (osPriority_t) 5);
 #endif
 
 #if SENSOR_CAN_LOG == 1
@@ -161,7 +184,9 @@ void setup() {
 #endif
 
 #if SENSOR_GPS == 1
-    gpsSensor = new GPSSensor(Serial, defaultBufferSize);
+    modem = new TinyGsm(Serial1);
+
+    gpsSensor = new GPSSensor(*modem, defaultBufferSize);
     gpsSensor->addListener([](const gps_coordinate_t& newValue) {
         CloudDatabase::instance.updateGPS(newValue);
     });
