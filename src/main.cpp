@@ -2,6 +2,7 @@
 
 #include "ApplicationTypes.h"
 #include "ThingProperties.hpp"
+#include "TinyGSMConnectionHandler.hpp"
 
 #include "ValueSensor.hpp"
 #include "CANLogEntry.hpp"
@@ -14,28 +15,34 @@
 constexpr uint32_t serialBaudrate = 115200;
 constexpr uint8_t defaultBufferSize = 1;
 
-#define SENSOR_GPS 1
-#define SENSOR_VOLTAGE 1
-#define SENSOR_CURRENT 1
-#define SENSOR_ACCELEROMETER 1
-#define SENSOR_PRESSURE 1
+#define SENSOR_GPS 0
+#define SENSOR_VOLTAGE 0
+#define SENSOR_CURRENT 0
+#define SENSOR_ACCELEROMETER 0
+#define SENSOR_PRESSURE 0
 #define SENSOR_CAN_LOG 0
-#define SENSOR_THROTTLE 1
-#define SENSOR_SPEEDOMETER 1
-#define SENSOR_RPM 1
+#define SENSOR_THROTTLE 0
+#define SENSOR_SPEEDOMETER 0
+#define SENSOR_RPM 0
 
-#define LOGGER_SD 1
+#define LOGGER_SD 0
 #define LOGGER_IOT 1
 
-enum class InternetConnection: uint8_t {
-    disabled = 0,
-    wifi = 1,
-    cellular = 2
-};
+//enum class InternetConnection: uint8_t {
+//    disabled = 0,
+//    wifi = 1,
+//    cellular = 2
+//};
 
-constexpr InternetConnection connection = InternetConnection::wifi;
+#define INTERNET_CONNECTION 2
 
+//constexpr InternetConnection connection = InternetConnection::cellular;
+
+#if INTERNET_CONNECTION == 1
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
+#elif INTERNET_CONNECTION == 2
+TinyGSMConnectionHandler ArduinoIoTPreferredConnection(Serial1, "", "LTEMOBILE.APN", "", "");
+#endif
 
 #if SENSOR_GPS == 1
 #include "GPSSensor.hpp"
@@ -101,7 +108,9 @@ ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t >(defaultBufferS
 void setup() {
     Serial.begin(serialBaudrate);
 
+    printf("Hello");
     DebugPrint("Initializing Telemetry System...");
+    Serial.print("HELLO");
 
 #ifndef UOSM_SECRETS
     DebugPrint("Failed to find secrets... Make sure to create a Secrets.h file. Aborting!");
@@ -124,7 +133,6 @@ void setup() {
     currentSensor->addListener([](const voltage_t& newValue) {
 
         // TODO Convert voltage into a current reading
-
        CloudDatabase::instance.updateBatteryCurrent(newValue * 2);
     });
 #endif

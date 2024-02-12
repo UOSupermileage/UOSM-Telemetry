@@ -8,7 +8,6 @@
 #include "ApplicationTypes.h"
 
 #include <ArduinoIoTCloud.h>
-#include <Arduino_ConnectionHandler.h>
 #include "Mutex.hpp"
 #include "Secrets.h"
 #include <vector>
@@ -78,9 +77,10 @@ public:
             iotMutex.lock();
             // TODO: Is there a cleaner way of doing this
             periodicMotorOn();
-            ArduinoCloud.update();
             iotMutex.unlock();
         }
+
+        ArduinoCloud.update();
     }
 
     float getBatteryVoltage() { return batteryVoltage; }
