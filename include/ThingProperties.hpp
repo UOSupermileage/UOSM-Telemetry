@@ -64,7 +64,7 @@ public:
         ArduinoCloud.addProperty(canMessage, READ, ON_CHANGE, NULL);
         ArduinoCloud.addProperty(batteryCurrent, READ, ON_CHANGE, NULL);
         ArduinoCloud.addProperty(batteryVoltage, READ, ON_CHANGE, NULL);
-        ArduinoCloud.addProperty(motor.rpm, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addPropertyReal(motor.rpm, "motorRPM", READ, ON_CHANGE, NULL);
         ArduinoCloud.addProperty(throttle, READ, ON_CHANGE, NULL);
         ArduinoCloud.addProperty(pressure, READ, ON_CHANGE, NULL);
         ArduinoCloud.addProperty(speed, READ, ON_CHANGE, NULL);

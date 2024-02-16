@@ -41,7 +41,7 @@ constexpr uint8_t defaultBufferSize = 1;
 #if INTERNET_CONNECTION == 1
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
 #elif INTERNET_CONNECTION == 2
-TinyGSMConnectionHandler ArduinoIoTPreferredConnection(Serial1, "", "LTEMOBILE.APN", "", "");
+TinyGSMConnectionHandler* ArduinoIoTPreferredConnection;
 #endif
 
 #if SENSOR_GPS == 1
@@ -216,7 +216,8 @@ void setup() {
 
 #if LOGGER_IOT == 1
     CloudDatabase::instance.SetupThing();
-    ArduinoCloud.begin(ArduinoIoTPreferredConnection);
+    ArduinoIoTPreferredConnection = new TinyGSMConnectionHandler(Serial1, "", "LTEMOBILE.APN", "", "");
+    ArduinoCloud.begin(*ArduinoIoTPreferredConnection);
     setDebugMessageLevel(2);
     ArduinoCloud.printDebugInfo();
 #endif
@@ -224,8 +225,11 @@ void setup() {
     DebugPrint("Setup Complete!");
 }
 
+
 void loop() {
 #if LOGGER_IOT == 1
+    static int a = 0;
     CloudDatabase::instance.PeriodicUpdate();
+    CloudDatabase::instance.updateThrottle(a++ % 1000);
 #endif
 }

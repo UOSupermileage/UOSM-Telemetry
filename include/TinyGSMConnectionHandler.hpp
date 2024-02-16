@@ -40,8 +40,11 @@ public:
         _login(login),
         _pass(pass),
         _modem(serial),
-        _client(_modem, 0)
-    {}
+        _client(_modem, 0),
+        _serial(serial)
+    {
+        _serial.begin(115200);
+    }
 
     virtual unsigned long getTime() override {
         // TODO: Implement this method
@@ -53,11 +56,46 @@ public:
 
 protected:
     // TODO: Implement state switching
-    virtual NetworkConnectionState update_handleInit         () override { return NetworkConnectionState::INIT; }
-    virtual NetworkConnectionState update_handleConnecting   () override { return NetworkConnectionState::INIT; }
-    virtual NetworkConnectionState update_handleConnected    () override { return NetworkConnectionState::INIT; }
-    virtual NetworkConnectionState update_handleDisconnecting() override { return NetworkConnectionState::INIT; }
-    virtual NetworkConnectionState update_handleDisconnected () override { return NetworkConnectionState::INIT; }
+    NetworkConnectionState update_handleInit() override {
+        if (!_modem.init()) {
+            return NetworkConnectionState::INIT;
+        }
+
+        _modem.waitForNetwork();
+        return NetworkConnectionState::CONNECTING;
+    }
+    NetworkConnectionState update_handleConnecting   () override {
+        if (!_modem.isNetworkConnected()) {
+            return NetworkConnectionState::CONNECTING;
+        }
+
+        if (!_modem.gprsConnect(_apn, _login, _pass)) {
+            return NetworkConnectionState::CONNECTING;
+        }
+
+        return NetworkConnectionState::CONNECTED;
+    }
+    virtual NetworkConnectionState update_handleConnected    () override {
+        if (!_modem.isNetworkConnected() || !_modem.isGprsConnected()) {
+            return NetworkConnectionState::DISCONNECTED;
+        }
+
+        return NetworkConnectionState::CONNECTED;
+    }
+    virtual NetworkConnectionState update_handleDisconnecting() override {
+
+    }
+    virtual NetworkConnectionState update_handleDisconnected () override {
+        if (!_modem.isNetworkConnected()) {
+            return NetworkConnectionState::CONNECTING;
+        }
+
+        if (!_modem.gprsConnect(_apn, _login, _pass)) {
+            return NetworkConnectionState::CONNECTING;
+        }
+
+        return NetworkConnectionState::CONNECTED;
+    }
 
 private:
     const char * _pin;
@@ -68,6 +106,8 @@ private:
     TinyGsm _modem;
     TinyGsmClient _client;
     TinyGSMUDP _udp;
+
+    UART& _serial;
 };
 
 
