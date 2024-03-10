@@ -19,7 +19,7 @@ void ExternalSerialPrintln(const char * message, ...);
 }
 #endif
 
-#define MCP2515_CS_PIN 71
+#define MCP2515_CS_PIN 7
 #define MCP2515_CS_HIGH()       GPIO_DigitalWrite(MCP2515_CS_PIN, 1)
 #define MCP2515_CS_LOW()        GPIO_DigitalWrite(MCP2515_CS_PIN, 0)
 

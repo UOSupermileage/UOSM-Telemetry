@@ -18,7 +18,7 @@ Teensy loader 1.23
 
 This code is released under the [MIT License](http://opensource.org/licenses/MIT).
 
-Please review the LICENSE.md file included with this example. If you have any questions 
+Please review the LICENSE.md file included with this example. If you have any questions
 or concerns with licensing, please contact techsupport@sparkfun.com.
 
 Distributed as-is; no warranty is given.
@@ -34,6 +34,7 @@ Distributed as-is; no warranty is given.
 
 #include "Wire.h"
 #include "SPI.h"
+#include "Arduino_PortentaBreakout.h"
 #include "ApplicationTypes.h"
 
 //****************************************************************************//
@@ -278,7 +279,7 @@ status_t LIS3DHCore::readRegister(uint8_t* outputPointer, uint8_t offset) {
 		DIGITAL_WRITE(chipSelectPin, HIGH);
 
         DebugPrint("SPI Read %02x", result);
-		
+
 		if( result == 0xFF )
 		{
 			//we've recieved all ones, report
@@ -350,7 +351,7 @@ status_t LIS3DHCore::writeRegister(uint8_t offset, uint8_t dataToWrite) {
 		// take the chip select high to de-select:
 		DIGITAL_WRITE(chipSelectPin, HIGH);
 		break;
-		
+
 		//No way to check error on this write (Except to read back but that's not reliable)
 
 	default:
@@ -372,7 +373,7 @@ LIS3DH::LIS3DH( uint8_t busType, CS_TYPE inputArg ) : LIS3DHCore( busType, input
 	//Construct with these default settings
 	//ADC stuff
 	settings.adcEnabled = 1;
-	
+
 	//Temperature settings
 	settings.tempEnabled = 1;
 
@@ -388,7 +389,7 @@ LIS3DH::LIS3DH( uint8_t busType, CS_TYPE inputArg ) : LIS3DHCore( busType, input
 	settings.fifoEnabled = 0;
 	settings.fifoThreshold = 20;  //Can be 0 to 32
 	settings.fifoMode = 0;  //FIFO mode.
-  
+
 	allOnesCounter = 0;
 	nonSuccessCounter = 0;
 

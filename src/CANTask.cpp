@@ -20,7 +20,8 @@ uint16_t pollingRate;
 [[noreturn]] void CANTask() {
     pinMode(MCP2515_CS_PIN, OUTPUT);
 
-    Breakout.SPI_0.begin();
+    printf("Starting CANTask");
+    SPI.begin();
 
     result_t isInitialized = RESULT_FAIL;
 
@@ -29,6 +30,7 @@ uint16_t pollingRate;
             printf("Initializing CAN Hardware");
             isInitialized = IComms_Init() ? RESULT_OK : RESULT_FAIL;
         } else {
+            printf("Periodic Receive");
             IComms_PeriodicReceive();
         }
 
@@ -41,6 +43,7 @@ void CANInit(
         osPriority_t priority,
         uint16_t _pollingRate
 ) {
+    printf("CANInit");
     pollingRate = _pollingRate;
     canThread.start(mbed::callback(CANTask));
 }

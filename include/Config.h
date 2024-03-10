@@ -1,0 +1,20 @@
+//
+// Created by Jeremy Cote on 2024-03-04.
+//
+
+#ifndef UOSM_TELEMETRY_PIO_CONFIG_H
+#define UOSM_TELEMETRY_PIO_CONFIG_H
+
+#define SENSOR_GPS 0
+#define SENSOR_VOLTAGE 0
+#define SENSOR_CURRENT 1
+#define SENSOR_ACCELEROMETER 0
+#define SENSOR_CAN_LOG 0
+#define SENSOR_THROTTLE 0
+#define SENSOR_SPEEDOMETER 0
+#define SENSOR_RPM 0
+
+#define LOGGER_SD 0
+#define LOGGER_IOT 0
+
+#endif //UOSM_TELEMETRY_PIO_CONFIG_H

@@ -49,6 +49,7 @@ private:
     CloudAcceleration accelerationY;
     CloudAcceleration accelerationZ;
     CloudPressure pressure;
+    CloudTemperature temperature;
     GPSData gps;
     CloudVelocity speed;
 
@@ -66,10 +67,11 @@ public:
         ArduinoCloud.addProperty(batteryVoltage, READ, ON_CHANGE, NULL);
         ArduinoCloud.addPropertyReal(motor.rpm, "motorRPM", READ, ON_CHANGE, NULL);
         ArduinoCloud.addProperty(throttle, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addProperty(temperature, READ, ON_CHANGE, NULL);
         ArduinoCloud.addProperty(pressure, READ, ON_CHANGE, NULL);
         ArduinoCloud.addProperty(speed, READ, ON_CHANGE, NULL);
-        ArduinoCloud.addProperty(motor.isOn, READ, ON_CHANGE, NULL);
-        ArduinoCloud.addProperty(gps.coordinates, READ, ON_CHANGE, NULL);
+        ArduinoCloud.addPropertyReal(motor.isOn, "motorOn", READ, ON_CHANGE, NULL);
+        ArduinoCloud.addPropertyReal(gps.coordinates, "gpsCoordinates", READ, ON_CHANGE, NULL);
     }
 
     void PeriodicUpdate() {
@@ -121,6 +123,7 @@ public:
 
     void updatePressure(pressure_t p) {
         pressure = p.pressure;
+        temperature = p.temp;
     }
 
     void updateGPS(gps_coordinate_t coordinate) {

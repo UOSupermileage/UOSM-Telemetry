@@ -30,7 +30,7 @@ void SPI_Transfer(void *data, uint32_t size) {
 #ifdef ESP32
     SPI.transfer(data, size);
 #elif MBED
-    Breakout.SPI_0.transfer(data, size);
+    SPI.transfer(data, size);
 #endif
 }
 

@@ -18,7 +18,7 @@
 
 class Accelerometer: public Sensor<acceleration_t>{
 private:
-    LIS3DH handle = LIS3DH(SPI_MODE,CS);
+    LIS3DH handle = LIS3DH(I2C_MODE,CS);
 
 public:
     explicit Accelerometer(uint8_t buffer_size): Sensor<acceleration_t>(buffer_size) {
