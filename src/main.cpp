@@ -80,7 +80,7 @@ ValueSensor<percentage_t>* throttleSensor = new ValueSensor<percentage_t>(defaul
 #include "Speedometer.hpp"
 #include "InternalCommsModule.h"
 
-#define SPEEDOMETER_PIN 0 // TODO: Change the pin to the real number
+#define SPEEDOMETER_PIN 4
 
 void hallInterupt();
 Speedometer* speedometer;
@@ -140,7 +140,10 @@ void setup() {
     printf("Created accelerometer\n");
 
     accelerationSensor->addListener([](const acceleration_t & newValue){
-        printf("Received new acceleration: %f %f %f\n", newValue.x, newValue.y, newValue.z);
+        printf("Acceleration X: %f\n", newValue.x);
+        printf("Acceleration Y: %f\n", newValue.y);
+        printf("Acceleration Z: %f\n", newValue.z);
+
         CloudDatabase::instance.updateAcceleration(newValue);
     });
 
@@ -206,7 +209,7 @@ void setup() {
     gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, static_cast<osPriority_t>(5));
 #endif
 
-#if SENSOR_CAN_LOG == 1 || SENSOR_RPM == 1 || SENSOR_THROTTLE == 1 || SENSOR_SPEEDOMETER == 1
+#if SENSOR_CAN_LOG == 1 || SENSOR_RPM == 1 || SENSOR_THROTTLE == 1
     printf("Starting CANInit!\n");
 //    CANInit(1024 * 10, (osPriority_t) 5, 100);
     pinMode(MCP2515_CS_PIN, OUTPUT);
@@ -264,7 +267,7 @@ void loop() {
     digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
     osDelay(100);
 
-#if SENSOR_CAN_LOG == 1 || SENSOR_RPM == 1 || SENSOR_THROTTLE == 1 || SENSOR_SPEEDOMETER == 1
+#if SENSOR_CAN_LOG == 1 || SENSOR_RPM == 1 || SENSOR_THROTTLE == 1
     IComms_PeriodicReceive();
 #endif
 }
