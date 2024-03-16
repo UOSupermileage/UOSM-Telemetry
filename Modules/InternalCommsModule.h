@@ -36,6 +36,8 @@ PUBLIC iCommsMessage_t IComms_CreateEventMessage(uint16_t standardMessageID, uin
 
 PUBLIC iCommsMessage_t IComms_CreatePairUInt16BitMessage(uint16_t standardMessageID, uint16_t a, uint16_t b);
 
+PUBLIC iCommsMessage_t IComms_CreateLightsMessage(uint16_t standardMessageID, uint8_t code, uint8_t status);
+
 typedef union {
     uint32_t all;
     struct {

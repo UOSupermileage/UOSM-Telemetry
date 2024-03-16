@@ -16,7 +16,7 @@ extern "C" {
 
 // Standard Lib
 #include <stdarg.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <string.h>
 
 void SerialPrint(const char* message, ...);
