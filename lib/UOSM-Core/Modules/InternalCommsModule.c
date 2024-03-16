@@ -92,33 +92,38 @@ PUBLIC result_t IComms_Transmit(iCommsMessage_t *txMsg) {
 }
 
 PUBLIC void IComms_PeriodicReceive() {
-	for (uint8_t i = 0; i < batchSize && ICOMMS_DRIVER_MESSAGE_AVAILABLE() != 0; i++) {
-		// Create an empty message to populate
+    //DebugPrint("Number of messages available %x", ICOMMS_DRIVER_MESSAGE_AVAILABLE());
+    iCommsMessage_t rxMsg;
+    result_t ret = ICOMMS_DRIVER_RECEIVE_MESSAGE(&rxMsg);
+    //DebugPrint("Content of buffer %x",ret);
+    for (uint8_t i = 0; i < batchSize && ICOMMS_DRIVER_MESSAGE_AVAILABLE() != 0; i++) {
+        // Create an empty message to populate
         iCommsMessage_t rxMsg;
 
-		result_t ret = ICOMMS_DRIVER_RECEIVE_MESSAGE(&rxMsg);
-		if (ret == RESULT_FAIL) {
-			DebugPrint("#ICM: FAILED TO RETRIEVE ICOMMS MESSAGE FROM DRIVER");
-		} else {
-			uint8_t lookupTableIndex = 0;
+        result_t ret = ICOMMS_DRIVER_RECEIVE_MESSAGE(&rxMsg);
+        if (ret == RESULT_FAIL) {
+            DebugPrint("#ICM: FAILED TO RETRIEVE ICOMMS MESSAGE FROM DRIVER");
+        } else {
+            uint8_t lookupTableIndex = 0;
 
-			// Lookup CAN message in table
-			// Exit while loop if message found or if end of table reached
-			while (rxMsg.standardMessageID != CANMessageLookUpTable[lookupTableIndex].messageID && lookupTableIndex < NUMBER_CAN_MESSAGE_IDS) {
-				// DebugPrint("%s msgId[%x] != [%x]", ICM_TAG, rxMsg.standardMessageID, CANMessageLookUpTable[lookupTableIndex].messageID);
-				lookupTableIndex++;
-			}
+            // Lookup CAN message in table
+            // Exit while loop if message found or if end of table reached
+            while (rxMsg.standardMessageID != CANMessageLookUpTable[lookupTableIndex].messageID && lookupTableIndex < NUMBER_CAN_MESSAGE_IDS) {
+                // DebugPrint("%s msgId[%x] != [%x]", ICM_TAG, rxMsg.standardMessageID, CANMessageLookUpTable[lookupTableIndex].messageID);
+                lookupTableIndex++;
+            }
 
-			// handle the case where the message is no recognized by the look up table
-			if (lookupTableIndex < NUMBER_CAN_MESSAGE_IDS) {
-				// DebugPrint("%s Executing callback", ICM_TAG);
+            // handle the case where the message is no recognized by the look up table
+            if (lookupTableIndex < NUMBER_CAN_MESSAGE_IDS) {
+                // DebugPrint("%s Executing callback", ICM_TAG);
                 // Execute callback for message
-				CANMessageLookUpTable[lookupTableIndex].canMessageCallback(&rxMsg);
-			} else {
-				DebugPrint("%s Unknown message id [%x], index [%d]", ICM_TAG, rxMsg.standardMessageID, lookupTableIndex);
-			}
-		}
-	}
+                DebugPrint("Executing CAN Callback");
+                CANMessageLookUpTable[lookupTableIndex].canMessageCallback(&rxMsg);
+            } else {
+                DebugPrint("%s Unknown message id [%x], index [%d]", ICM_TAG, rxMsg.standardMessageID, lookupTableIndex);
+            }
+        }
+    }
 }
 
 PUBLIC iCommsMessage_t IComms_CreateMessage(uint16_t standardMessageID, uint8_t dataLength, uint8_t data[8]) {
@@ -183,6 +188,14 @@ PUBLIC iCommsMessage_t IComms_CreatePairUInt16BitMessage(uint16_t standardMessag
         data[3] = b >> 8;
 
         return IComms_CreateMessage(standardMessageID, 4, data);
+}
+
+PUBLIC iCommsMessage_t IComms_CreateLightsMessage(uint16_t standardMessageID, uint8_t code, uint8_t status) {
+    uint8_t data[8];
+    data[0] = status;
+    data[1] = code;
+
+    return IComms_CreateMessage(standardMessageID, 2, data);
 }
 
 PUBLIC uint16_pair_t readMsgPairUInt16Bit(iCommsMessage_t *msg) {

@@ -87,6 +87,10 @@ public:
                 return "Error";
             case CURRENT_VOLTAGE_DATA_ID:
                 return "Cur/Volt";
+            case TEMPERATURE_DATA_ID:
+                return "Temperature";
+            case PRESSURE_DATA_ID:
+                return "Pressure";
         }
 
         return "ExecEr";
