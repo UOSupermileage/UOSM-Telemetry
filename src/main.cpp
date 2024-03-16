@@ -78,7 +78,6 @@ ValueSensor<percentage_t>* throttleSensor = new ValueSensor<percentage_t>(defaul
 
 #if SENSOR_SPEEDOMETER == 1
 #include "Speedometer.hpp"
-#include "InternalCommsModule.h"
 
 #define SPEEDOMETER_PIN 4
 
@@ -90,6 +89,12 @@ PollingSensorTask<speed_t>* speedometerTask;
 #if SENSOR_RPM == 1
 ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t >(defaultBufferSize);
 #endif
+
+//static rtos::Thread statusLightThread;
+//
+//void StatusLightTask() {
+//
+//}
 
 void setup() {
     Serial.begin(serialBaudrate);
@@ -105,31 +110,24 @@ void setup() {
 
     // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
 
-#if SENSOR_VOLTAGE == 1
-    printf("Creating voltage sensor\n");
-    // TODO: Fix ADS library to not hand for infinity?
-#define PH15 0
-    voltageSensor = new VoltageSensor(VoltageSensor::VoltageSensorMode::Differential_0_1, 0, 0x40, defaultBufferSize);
-    printf("Accessing voltage sensor\n");
-    voltageSensor->addListener([](const voltage_t& newValue) {
-//        CloudDatabase::instance.updateBatteryVoltage(convertVoltageToFloat(newValue));
-        printf("Voltage: %d", newValue);
-    });
+#if SENSOR_VOLTAGE == 1 || SENSOR_CURRENT == 1
+    Wire.begin();
+#endif
 
-    printf("Creating voltage sensor task\n");
+#if SENSOR_VOLTAGE == 1
+    voltageSensor = new VoltageSensor(Wire, VoltageSensor::VoltageSensorMode::Differential_0_1, 0, 0x40, defaultBufferSize);
+    voltageSensor->addListener([](const voltage_t& newValue) {
+        CloudDatabase::instance.updateBatteryVoltage(newValue);
+        printf("Voltage: %f", newValue);
+    });
     voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, static_cast<osPriority_t>(5));
-    printf("End Voltage Init\n");
 #endif
 
 #if SENSOR_CURRENT == 1
-    Wire.begin();
     currentSensor = new VoltageSensor(Wire, VoltageSensor::VoltageSensorMode::Differential_2_3, 0, 0x40, defaultBufferSize);
     currentSensor->addListener([](const voltage_t& newValue) {
-
-        // TODO Convert voltage into a current reading
-//       CloudDatabase::instance.updateBatteryCurrent(newValue);
-        printf("Current: %f\n", newValue);
-
+        CloudDatabase::instance.updateBatteryCurrent(newValue / 12.5f);
+        printf("Current: %fA\n", newValue / 12.5f);
     });
     currentSensorTask = new PollingSensorTask<voltage_t>(currentSensor, 200, "T_CurrentSensor", 1024 * 10, static_cast<osPriority_t>(5));
 #endif
@@ -159,12 +157,6 @@ void setup() {
     printf("Created accelerometer task\n");
 #endif
 
-#if SENSOR_PRESSURE == 1
-    pressureSensor->addListener([](const pressure_t & newValue){
-        CloudDatabase::instance.updatePressure(newValue);
-    });
-#endif
-
 #if SENSOR_CAN_LOG == 1
 //    canLogsSensor->addListener([](const CANLogEntry* newValue) {
 //        // Print all received CAN messages to Serial
@@ -188,7 +180,6 @@ void setup() {
 #if SENSOR_SPEEDOMETER == 1
     speedometer = new Speedometer(defaultBufferSize);
 
-//    digitalWrite(71, HIGH);
     attachInterrupt(digitalPinToInterrupt(SPEEDOMETER_PIN), hallInterupt, HIGH);
 
     speedometer->addListener([](const speed_t& newValue) {
@@ -209,13 +200,13 @@ void setup() {
     gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, static_cast<osPriority_t>(5));
 #endif
 
-#if SENSOR_CAN_LOG == 1 || SENSOR_RPM == 1 || SENSOR_THROTTLE == 1
-    printf("Starting CANInit!\n");
-//    CANInit(1024 * 10, (osPriority_t) 5, 100);
+#if ENABLE_CAN == 1
     pinMode(MCP2515_CS_PIN, OUTPUT);
-SPI.begin();
-SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE0));
-IComms_Init();
+    SPI.begin();
+    SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE0));
+    IComms_Init();
+    printf("Starting CANInit!\n");
+//    CANInit(1024 * 10, (osPriority_t) 7, 400);
 
 #endif
 
@@ -237,39 +228,63 @@ IComms_Init();
     ArduinoCloud.printDebugInfo();
 #endif
 
-    pinMode(LED_BUILTIN, OUTPUT);
-
+//    statusLightThread.start(mbed::callback(StatusLightTask));
     printf("Setup Complete!\n");
+
+    pinMode(LED_BLUE, OUTPUT);
+    pinMode(LED_RED, OUTPUT);
 }
 
-const ICommsMessageInfo* speedInfo = CANMessageLookUpGetInfo(SPEED_DATA_ID);
-uint8_t speedTxCounter = 0;
-#define SPEED_RATE 200
+//const ICommsMessageInfo* speedInfo = CANMessageLookUpGetInfo(SPEED_DATA_ID);
+//uint8_t speedTxCounter = 0;
+//#define SPEED_RATE 400
 
 void loop() {
 #if LOGGER_IOT == 1
-    static int a = 0;
     CloudDatabase::instance.PeriodicUpdate();
-    CloudDatabase::instance.updateThrottle(a++ % 1000);
 #endif
 
 #if SENSOR_SPEEDOMETER == 1
-//    speedTxCounter++;
-//    if (speedTxCounter == SPEED_RATE) {
-//        iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, speedometer->get());
-//        result_t _ = IComms_Transmit(&speedTxMsg);
-//        speedTxCounter = 0;
-//    }
+    speedTxCounter++;
+    if (speedTxCounter == SPEED_RATE) {
+        iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, speedometer->get());
+        result_t _ = IComms_Transmit(&speedTxMsg);
+        speedTxCounter = 0;
+    }
 #endif
 
-    digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
-    osDelay(100);                      // wait for a second
-    digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
-    osDelay(100);
+    static bool isOn = false;
+    digitalWrite(LED_BLUE, isOn ? HIGH : LOW);
+    digitalWrite(LED_RED, isOn ? HIGH : LOW);
+    isOn = !isOn;
 
-#if SENSOR_CAN_LOG == 1 || SENSOR_RPM == 1 || SENSOR_THROTTLE == 1
+#if ENABLE_CAN == 1
     IComms_PeriodicReceive();
 #endif
+
+//    static result_t isInitialized = RESULT_FAIL;
+//
+//    static uint8_t broadcast_voltage_current_counter = 0;
+//    static const ICommsMessageInfo *voltageCurrentInfo = CANMessageLookUpGetInfo(CURRENT_VOLTAGE_DATA_ID);
+//    static const ICommsMessageInfo *motorInfo = CANMessageLookUpGetInfo(MOTOR_RPM_DATA_ID);
+//
+//    if (isInitialized == RESULT_FAIL) {
+//        printf("Initializing CAN Hardware");
+//        isInitialized = IComms_Init();
+//    } else {
+//        printf("Periodic Receive");
+//        IComms_PeriodicReceive();
+//    }
+//
+//    if (broadcast_voltage_current_counter++ > 400) {
+//        iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, 500, 48000);;
+//        result_t r = IComms_Transmit(&txMsg);
+//
+//        printf("Broadcast voltage and current.");
+//        broadcast_voltage_current_counter = 0;
+//    }
+
+    rtos::ThisThread::sleep_for(std::chrono::milliseconds(100));
 }
 
 #if SENSOR_SPEEDOMETER == 1

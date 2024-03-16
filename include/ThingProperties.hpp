@@ -75,12 +75,12 @@ public:
     }
 
     void PeriodicUpdate() {
-        if (!iotMutex.getLocked()) {
-            iotMutex.lock();
+//        if (!iotMutex.getLocked()) {
+//            iotMutex.lock();
             // TODO: Is there a cleaner way of doing this
             periodicMotorOn();
-            iotMutex.unlock();
-        }
+//            iotMutex.unlock();
+//        }
 
         ArduinoCloud.update();
     }
