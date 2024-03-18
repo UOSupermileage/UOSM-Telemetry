@@ -15,7 +15,7 @@
 template<typename T>
 class PollingSensorTask: public SensorTask {
 private:
-    rtos::Thread thread;
+    rtos::Thread* thread;
 
     static void loop(void* parameters) {
         auto* args = (PollingSensorTaskArgs*) parameters;
@@ -28,6 +28,10 @@ private:
             rtos::ThisThread::sleep_for(std::chrono::milliseconds(args->pollingRate));
             printf("Ended Thread Sleep\n");
         }
+    }
+
+    ~PollingSensorTask() {
+        delete thread;
     }
 
 public:
@@ -45,12 +49,8 @@ public:
         auto* args = new PollingSensorTaskArgs(sensor, pollingRate);
 
         printf("Starting RTOS Thread\n");
-        thread.start(mbed::callback(PollingSensorTask::loop, args));
-
-//        DebugPrint("Setting priority");
-//        thread.set_priority(priority);
-//
-//        DebugPrint("Set priority");
+        thread = new rtos::Thread(priority);
+        thread->start(mbed::callback(PollingSensorTask::loop, args));
     }
 };
 

@@ -6,7 +6,6 @@
  */
 
 #include "SerialDebugDriver.h"
-#include "printf.h"
 
 #ifdef STM
 static char messageBuf[MAX_SERIAL_PRINT_LENGTH];

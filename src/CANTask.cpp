@@ -9,7 +9,7 @@
 #include "Arduino_PortentaBreakout.h"
 #include "CANMessageLookUpModule.h"
 #include <Arduino.h>
-
+#include "ThingProperties.hpp"
 #include <rtos.h>
 
 // RTOS Handles
@@ -18,6 +18,7 @@ static rtos::Thread canThread;
 uint16_t pollingRate;
 
 #define VOLTAGE_CURRENT_BROADCAST_RATE 5
+#define SPEED_BROADCAST_RATE 2
 
 // RTOS Execution Loops
 [[noreturn]] void CANTask() {
@@ -32,6 +33,9 @@ uint16_t pollingRate;
     uint8_t broadcast_voltage_current_counter = 0;
     const ICommsMessageInfo *voltageCurrentInfo = CANMessageLookUpGetInfo(CURRENT_VOLTAGE_DATA_ID);
 
+    uint8_t speedTxCounter = 0;
+    const ICommsMessageInfo *speedInfo = CANMessageLookUpGetInfo(SPEED_DATA_ID);
+
     while (true) {
         if (isInitialized == RESULT_FAIL) {
             printf("Initializing CAN Hardware");
@@ -42,10 +46,17 @@ uint16_t pollingRate;
         }
 
         if (broadcast_voltage_current_counter++ > VOLTAGE_CURRENT_BROADCAST_RATE) {
-            iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, 500, 48000);;
-            result_t r = IComms_Transmit(&txMsg);
+            iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, CloudDatabase::instance.getBatteryVoltage(), CloudDatabase::instance.getBatteryCurrent());;
+            result_t _ = IComms_Transmit(&txMsg);
             printf("Broadcast voltage and current.");
             broadcast_voltage_current_counter = 0;
+        }
+
+        speedTxCounter++;
+        if (speedTxCounter > SPEED_BROADCAST_RATE) {
+            iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, CloudDatabase::instance.getSpeed());
+            result_t _ = IComms_Transmit(&speedTxMsg);
+            speedTxCounter = 0;
         }
 
         rtos::ThisThread::sleep_for(std::chrono::milliseconds(pollingRate));

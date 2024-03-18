@@ -90,11 +90,35 @@ PollingSensorTask<speed_t>* speedometerTask;
 ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t >(defaultBufferSize);
 #endif
 
-//static rtos::Thread statusLightThread;
-//
-//void StatusLightTask() {
-//
-//}
+static rtos::Thread statusLightThread;
+
+void StatusLightTask() {
+    bool isOn = false;
+    while (true) {
+        digitalWrite(LEDG, isOn ? HIGH : LOW);
+        isOn = !isOn;
+        osDelay(500);
+    }
+}
+
+static rtos::Thread iotThread(osPriorityLow);
+
+void IotTask() {
+    CloudDatabase::instance.SetupThing();
+    ArduinoIoTPreferredConnection = new TinyGSMConnectionHandler(Serial1, "", "LTEMOBILE.APN", "", "");
+    ArduinoCloud.begin(*ArduinoIoTPreferredConnection);
+    setDebugMessageLevel(2);
+    ArduinoCloud.printDebugInfo();
+
+    while (true) {
+        CloudDatabase::instance.PeriodicUpdate();
+
+        static bool isOn = false;
+        digitalWrite(LEDB, isOn ? HIGH : LOW);
+        isOn = !isOn;
+        osDelay(50);
+    }
+}
 
 void setup() {
     Serial.begin(serialBaudrate);
@@ -120,7 +144,7 @@ void setup() {
         CloudDatabase::instance.updateBatteryVoltage(newValue);
         printf("Voltage: %f", newValue);
     });
-    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, static_cast<osPriority_t>(5));
+    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, osPriorityNormal);
 #endif
 
 #if SENSOR_CURRENT == 1
@@ -129,7 +153,7 @@ void setup() {
         CloudDatabase::instance.updateBatteryCurrent(newValue / 12.5f);
         printf("Current: %fA\n", newValue / 12.5f);
     });
-    currentSensorTask = new PollingSensorTask<voltage_t>(currentSensor, 200, "T_CurrentSensor", 1024 * 10, static_cast<osPriority_t>(5));
+    currentSensorTask = new PollingSensorTask<voltage_t>(currentSensor, 200, "T_CurrentSensor", 1024 * 10, osPriorityNormal);
 #endif
 
 #if SENSOR_ACCELEROMETER == 1
@@ -152,7 +176,7 @@ void setup() {
     printf("Forced collection\n");
 
     printf("Creating PollingSensorTask\n");
-    accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 10,static_cast<osPriority_t>(5));
+    accelerationSensorTask = new PollingSensorTask<acceleration_t>(accelerationSensor, 200, "T_AccelSensor", 1024 * 10, osPriorityNormal);
 
     printf("Created accelerometer task\n");
 #endif
@@ -187,7 +211,7 @@ void setup() {
         printf("Speed: %d", newValue);
     });
 
-    speedometerTask = new PollingSensorTask<speed_t>(speedometer, 200, "T_Speedometer", 1024 * 10, static_cast<osPriority_t>(5));
+    speedometerTask = new PollingSensorTask<speed_t>(speedometer, 200, "T_Speedometer", 1024 * 10, osPriorityNormal);
 #endif
 
 #if SENSOR_GPS == 1
@@ -197,17 +221,15 @@ void setup() {
     gpsSensor->addListener([](const gps_coordinate_t& newValue) {
         CloudDatabase::instance.updateGPS(newValue);
     });
-    gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, static_cast<osPriority_t>(5));
+    gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, osPriorityNormal);
 #endif
 
 #if ENABLE_CAN == 1
     pinMode(MCP2515_CS_PIN, OUTPUT);
     SPI.begin();
-    SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE0));
-    IComms_Init();
+    SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE3));
     printf("Starting CANInit!\n");
-//    CANInit(1024 * 10, (osPriority_t) 7, 400);
-
+    CANInit(1024 * 10, (osPriority_t) 7, 400);
 #endif
 
 #if LOGGER_SD == 1
@@ -221,70 +243,23 @@ void setup() {
 #endif
 
 #if LOGGER_IOT == 1
-    CloudDatabase::instance.SetupThing();
-    ArduinoIoTPreferredConnection = new TinyGSMConnectionHandler(Serial1, "", "LTEMOBILE.APN", "", "");
-    ArduinoCloud.begin(*ArduinoIoTPreferredConnection);
-    setDebugMessageLevel(2);
-    ArduinoCloud.printDebugInfo();
+    iotThread.start(mbed::callback(IotTask));
 #endif
 
-//    statusLightThread.start(mbed::callback(StatusLightTask));
+    statusLightThread.start(mbed::callback(StatusLightTask));
     printf("Setup Complete!\n");
 
-    pinMode(LED_BLUE, OUTPUT);
-    pinMode(LED_RED, OUTPUT);
+    pinMode(LEDB, OUTPUT);
+    pinMode(LEDG, OUTPUT);
 }
 
 //const ICommsMessageInfo* speedInfo = CANMessageLookUpGetInfo(SPEED_DATA_ID);
 //uint8_t speedTxCounter = 0;
 //#define SPEED_RATE 400
 
+
 void loop() {
-#if LOGGER_IOT == 1
-    CloudDatabase::instance.PeriodicUpdate();
-#endif
-
-#if SENSOR_SPEEDOMETER == 1
-    speedTxCounter++;
-    if (speedTxCounter == SPEED_RATE) {
-        iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, speedometer->get());
-        result_t _ = IComms_Transmit(&speedTxMsg);
-        speedTxCounter = 0;
-    }
-#endif
-
-    static bool isOn = false;
-    digitalWrite(LED_BLUE, isOn ? HIGH : LOW);
-    digitalWrite(LED_RED, isOn ? HIGH : LOW);
-    isOn = !isOn;
-
-#if ENABLE_CAN == 1
-    IComms_PeriodicReceive();
-#endif
-
-//    static result_t isInitialized = RESULT_FAIL;
-//
-//    static uint8_t broadcast_voltage_current_counter = 0;
-//    static const ICommsMessageInfo *voltageCurrentInfo = CANMessageLookUpGetInfo(CURRENT_VOLTAGE_DATA_ID);
-//    static const ICommsMessageInfo *motorInfo = CANMessageLookUpGetInfo(MOTOR_RPM_DATA_ID);
-//
-//    if (isInitialized == RESULT_FAIL) {
-//        printf("Initializing CAN Hardware");
-//        isInitialized = IComms_Init();
-//    } else {
-//        printf("Periodic Receive");
-//        IComms_PeriodicReceive();
-//    }
-//
-//    if (broadcast_voltage_current_counter++ > 400) {
-//        iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, 500, 48000);;
-//        result_t r = IComms_Transmit(&txMsg);
-//
-//        printf("Broadcast voltage and current.");
-//        broadcast_voltage_current_counter = 0;
-//    }
-
-    rtos::ThisThread::sleep_for(std::chrono::milliseconds(100));
+    rtos::ThisThread::sleep_for(std::chrono::milliseconds(1000));
 }
 
 #if SENSOR_SPEEDOMETER == 1
@@ -293,12 +268,7 @@ void hallInterupt() {
 }
 #endif
 
-#include "ApplicationTypes.h"
 #include "CANMessageLookUpModule.h"
-#include "CANDriver.h"
-
-#include "ThingProperties.hpp"
-#include "Config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -362,7 +332,7 @@ void EventDataCallback(iCommsMessage_t *msg) {
 
         switch (code) {
             case DEADMAN:
-                CloudDatabase::instance.updateMotorOn(status);
+//                CloudDatabase::instance.updateMotorOn(status);
             default:
                 break;
         }
@@ -397,6 +367,18 @@ void MotorRPMDataCallback(iCommsMessage_t *msg) {
  * @param msg
  */
 void CurrentVoltageDataCallback(iCommsMessage_t *msg) {
+    // Do nothing, telemetry broadcasts this type of message
+}
+
+void LightsDataCallback(iCommsMessage_t *msg) {
+    // Do nothing, telemetry broadcasts this type of message
+}
+
+void PressureDataCallback(iCommsMessage_t *msg) {
+    // Do nothing, telemetry broadcasts this type of message
+}
+
+void TemperatureDataCallback(iCommsMessage_t *msg) {
     // Do nothing, telemetry broadcasts this type of message
 }
 

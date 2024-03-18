@@ -1,7 +1,7 @@
 //
 // Created by Jeremy Cote on 2023-09-08.
 //
-
+//
 #include "LoggerTask.hpp"
 #include "ApplicationTypes.h"
 #include <rtos.h>
@@ -79,7 +79,7 @@ String createFilename() {
         FILE *fp = fopen(f.c_str(), "r");
         if (fp == nullptr) {
             fclose(fp);
-            break;  // leave the loop!
+            break; //   leave the loop!
         }
         fclose(fp);
     }
