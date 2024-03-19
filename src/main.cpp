@@ -362,6 +362,52 @@ void MotorRPMDataCallback(iCommsMessage_t *msg) {
 #endif
 }
 
+#if DATA_AIR_SPEED == 1
+
+// map of air density values at different temperatures (key, value) = (temperature, air density)
+const std::map<int, float> airDensityMap = {
+        {-25, 1.4224},
+        {-20, 1.3943},
+        {-15, 1.3673},
+        {-10, 1.3413},
+        {-5, 1.3163},
+        {0, 1.2922},
+        {5, 1.2690},
+        {10, 1.2466},
+        {15, 1.2250},
+        {20, 1.2041},
+        {25, 1.1839},
+        {30, 1.1644},
+        {35, 1.1455},
+        {40, 1.127},
+        {45, 1.110},
+        {50, 1.093},
+        {55, 1.076},
+        {60, 1.061}
+};
+
+// air pressure value
+int airPressure = 0;
+
+// air temperature value
+int airTemperature = 0;
+
+void AirSpeedDataProcessing() {
+    // round air temperature to nearest 5
+    int roundedAirTemperature = (int) (5 * round((float) airTemperature / 5));
+
+    // get air density
+    float airDensity = airDensityMap.at(roundedAirTemperature);
+
+    // calculate air speed
+    float airSpeed = sqrt((2 * airPressure) / airDensity);
+
+    // update air speed
+    //CloudDatabase::instance.updateAirSpeed(airSpeed);
+    DebugPrint("Air Speed: %f", airSpeed);
+}
+#endif
+
 /**
  * Listen for Current and Voltage messages
  * @param msg
@@ -376,10 +422,14 @@ void LightsDataCallback(iCommsMessage_t *msg) {
 
 void PressureDataCallback(iCommsMessage_t *msg) {
     // Do nothing, telemetry broadcasts this type of message
+    airPressure = readMsg(msg);
+    AirSpeedDataProcessing();
 }
 
 void TemperatureDataCallback(iCommsMessage_t *msg) {
     // Do nothing, telemetry broadcasts this type of message
+    airTemperature = readMsg(msg);
+    AirSpeedDataProcessing();
 }
 
 #ifdef __cplusplus
