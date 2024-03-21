@@ -102,8 +102,8 @@ typedef struct {
 } gps_coordinate_t;
 
 typedef struct {
-    double pressure;
-    double temp;
+    float pressure;
+    float temp;
 } pressure_t;
 
 // Make sure to use the entire 32 bits for stable CAN transmission

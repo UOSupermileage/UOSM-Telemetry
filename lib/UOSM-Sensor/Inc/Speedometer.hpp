@@ -26,13 +26,10 @@ private:
     volatile uint32_t hallFrequency = 0;
     volatile uint32_t clicks = 0;
 public:
-    explicit Speedometer(uint8_t buffer_size): Sensor<speed_t>(buffer_size) {
-
-    }
-
     void collect() override{
         printf("@%d | hallFrenquency: %d. Clicks: %d\n",osKernelGetTickCount(), hallFrequency, clicks);
-        add((uint32_t) (hallFrequency * 36 * HALL_CIRC) / (HALL_BOLTS));
+        speed_t value = (uint32_t) (hallFrequency * 36 * HALL_CIRC) / (HALL_BOLTS);
+        notify(value);
     }
 
     void hallCallback() {

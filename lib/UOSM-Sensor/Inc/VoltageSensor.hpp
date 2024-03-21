@@ -23,13 +23,12 @@ private:
     bool initialized = false;
 
 public:
-    explicit VoltageSensor(TwoWire& i2c, VoltageSensorMode mode, uint8_t drdy_pin, uint16_t address, uint8_t bufferSize): Sensor<voltage_t>(bufferSize), mode(mode) {
+    explicit VoltageSensor(TwoWire& i2c, VoltageSensorMode mode, uint8_t drdy_pin, uint16_t address): ads(new ADS1219(i2c, drdy_pin, address)), mode(mode) {
 
-        printf("VoltageSensor Constructor\n");
+    }
 
-        ads = new ADS1219(i2c, drdy_pin, address);
-
-        printf("Completed VoltageSensor Constructor\n");
+    virtual ~VoltageSensor() {
+        delete ads;
     }
 
     /**
@@ -37,17 +36,16 @@ public:
      */
     void collect() override {
 
+        if (ads == nullptr) {
+            DebugPrint("Voltage Sensor internal pointer in null. Aborting collection()\n");
+            return;
+        }
+
         if (!initialized) {
-            printf("begin() ADS\n");
             initialized = ads->begin() && ads->set_voltage_ref(EXTERNAL) && ads->set_conversion_mode(SINGLE_SHOT);
             if (!initialized) {
                 return;
             }
-        }
-
-        if (ads == nullptr) {
-            printf("Voltage Sensor internal pointer in null. Aborting collection()\n");
-            return;
         }
 
         switch (mode) {
@@ -72,7 +70,8 @@ public:
             ads->read_conversion();
             float voltage = ads->get_millivolts(3300.0);
             printf("Collected voltage (mV): %f, (raw): %li\n", voltage, ads->get_raw());
-            add(voltage);
+
+            notify(voltage);
         }
     }
 };

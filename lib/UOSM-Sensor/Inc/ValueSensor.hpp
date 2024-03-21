@@ -10,13 +10,12 @@
 template<typename T>
 class ValueSensor: public Sensor<T> {
 protected:
-    using Sensor<T>::add;
+    using Sensor<T>::notify;
 public:
-    explicit ValueSensor(uint8_t bufferSize): Sensor<T>(bufferSize) {}
-
     void collect() override {};
-    virtual void collect(T value) {
-        add(value);
+
+    virtual void collect(T& value) {
+        notify(value);
     }
 };
 

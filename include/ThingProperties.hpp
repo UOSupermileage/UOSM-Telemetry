@@ -36,9 +36,6 @@ struct GPSData {
 
 class CloudDatabase {
 private:
-    // Synchronize write access to the class
-    Mutex iotMutex;
-
     std::vector<LapData> laps;
     CloudElectricCurrent batteryCurrent;
     CloudElectricPotential batteryVoltage;
@@ -52,6 +49,7 @@ private:
     CloudTemperature temperature;
     GPSData gps;
     CloudVelocity speed;
+    CloudFloat airSpeed;
 
 public:
     static CloudDatabase instance;
@@ -72,16 +70,11 @@ public:
         ArduinoCloud.addProperty(speed, READ, ON_CHANGE, NULL);
         ArduinoCloud.addPropertyReal(motor.isOn, "motorOn", READ, ON_CHANGE, NULL);
         ArduinoCloud.addPropertyReal(gps.coordinates, "gpsCoordinates", READ, ON_CHANGE, NULL);
+        ArduinoCloud.addPropertyReal(airSpeed, "airSpeed", READ, ON_CHANGE, NULL);
     }
 
     void PeriodicUpdate() {
-//        if (!iotMutex.getLocked()) {
-//            iotMutex.lock();
-            // TODO: Is there a cleaner way of doing this
-            periodicMotorOn();
-//            iotMutex.unlock();
-//        }
-
+        periodicMotorOn();
         ArduinoCloud.update();
     }
 
@@ -100,6 +93,10 @@ public:
     float getThrottle() { return throttle; }
 
     float getSpeed() { return speed; }
+
+    float getPressure() { return pressure; }
+
+    float getTemperature() { return temperature; }
 
     void updateBatteryVoltage(float voltage) {
         batteryVoltage = voltage;
@@ -121,10 +118,7 @@ public:
         canMessage = message;
     }
 
-    void updatePressure(pressure_t p) {
-        pressure = p.pressure;
-        temperature = p.temp;
-    }
+    void updatePressure(float pressure, float temperature);
 
     void updateGPS(gps_coordinate_t coordinate) {
         gps.coordinates = {coordinate.longitude, coordinate.latitude};
