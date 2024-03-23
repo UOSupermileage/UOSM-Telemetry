@@ -17,6 +17,7 @@ extern void CurrentVoltageDataCallback(iCommsMessage_t *msg);
 extern void PressureDataCallback(iCommsMessage_t *msg);
 extern void TemperatureDataCallback(iCommsMessage_t *msg);
 extern void LightsDataCallback(iCommsMessage_t *msg);
+extern void EfficiencyDataCallback(iCommsMessage_t *msg);
 
 /*********************************************************************************
  *
@@ -31,9 +32,10 @@ const ICommsMessageInfo CANMessageLookUpTable[NUMBER_CAN_MESSAGE_IDS] = {
     {EVENT_DATA_ID, 0x0400, 2, &EventDataCallback},
     {ERROR_DATA_ID, 0x0401, 2, &ErrorDataCallback},
     {CURRENT_VOLTAGE_DATA_ID, 0x0004, 2, &CurrentVoltageDataCallback},
-    {LIGHT_DATA_ID,0x0305,2,&LightsDataCallback},
+    {LIGHT_DATA_ID,0x0305,4,&LightsDataCallback},
     {PRESSURE_DATA_ID, 0x0005, 4, &PressureDataCallback},
-    {TEMPERATURE_DATA_ID, 0x0006, 4, &TemperatureDataCallback}
+    {TEMPERATURE_DATA_ID, 0x0006, 4, &TemperatureDataCallback},
+    {EFFICIENCY_DATA_ID, 0x0007, 4, &EfficiencyDataCallback}
 };
 
 PUBLIC const ICommsMessageInfo *CANMessageLookUpGetInfo(ICommsMessageLookUpIndex id) { return &CANMessageLookUpTable[id]; }

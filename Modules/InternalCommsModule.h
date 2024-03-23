@@ -38,6 +38,16 @@ PUBLIC iCommsMessage_t IComms_CreatePairUInt16BitMessage(uint16_t standardMessag
 
 PUBLIC iCommsMessage_t IComms_CreateLightsMessage(uint16_t standardMessageID, uint8_t code, uint8_t status);
 
+/**
+ * Create an efficiency message that packs 4 laps into a CAN message
+ * @param standardMessageID
+ * @param efficiencies
+ * @return
+ */
+PUBLIC iCommsMessage_t IComms_CreateEfficiencyMessage(uint16_t standardMessageID, lap_efficiencies_t* efficiencies);
+
+PUBLIC result_t IComms_ReadEfficiencyMessage(iCommsMessage_t *msg, lap_efficiencies_t* result);
+
 typedef union {
     uint32_t all;
     struct {

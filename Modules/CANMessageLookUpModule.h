@@ -16,7 +16,7 @@ extern "C" {
 
 // CAN Message IDs for each piece of data
 // Details can be found on the CAN Reference Document
-#define NUMBER_CAN_MESSAGE_IDS 9
+#define NUMBER_CAN_MESSAGE_IDS 10
 
 typedef enum ICommsMessageLookUpIndex {
     THROTTLE_DATA_ID,
@@ -28,6 +28,7 @@ typedef enum ICommsMessageLookUpIndex {
     LIGHT_DATA_ID,
     PRESSURE_DATA_ID,
     TEMPERATURE_DATA_ID,
+    EFFICIENCY_DATA_ID
 } ICommsMessageLookUpIndex;
 
 typedef uint16_t MessageCANID_t;

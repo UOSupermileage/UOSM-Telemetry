@@ -52,7 +52,8 @@ typedef enum {
     EVENT_TIMER,
     MOTOR_INITIALIZING,
     UNDERVOLTAGE,
-    DRIVER_ENABLED
+    DRIVER_ENABLED,
+    NEW_LAP
 } EventCode;
 
 typedef enum {
@@ -102,8 +103,8 @@ typedef struct {
 } gps_coordinate_t;
 
 typedef struct {
-    double pressure;
-    double temp;
+    float pressure;
+    float temp;
 } pressure_t;
 
 // Make sure to use the entire 32 bits for stable CAN transmission
@@ -117,6 +118,17 @@ typedef union {
         uint32_t low_beams_enabled:28;
     };
 } lights_status_t;
+
+typedef union {
+    uint32_t all;
+    struct {
+        uint32_t lap_0:8;
+        uint32_t lap_1:8;
+        uint32_t lap_2:8;
+        uint32_t lap_3:8;
+    };
+} lap_efficiencies_t;
+
 #ifdef __cplusplus
 }
 #endif
