@@ -125,7 +125,7 @@ void IotTask() {
 void setup() {
     Serial.begin(serialBaudrate);
 
-    delay(2000);
+    delay(1000);
 
     printf("Initializing Telemetry System...\n");
 
@@ -133,8 +133,6 @@ void setup() {
     printf("Failed to find secrets... Make sure to create a Secrets.h file. Aborting!\n");
     while (true) {}
 #endif
-
-    // TODO: Note that sensors will throw an exception if collect is not called before get(). See if we can apply RAII
 
 #if SENSOR_VOLTAGE == 1 || SENSOR_CURRENT == 1
     Wire.begin();
@@ -186,6 +184,8 @@ void setup() {
 #endif
 
 #if SENSOR_THROTTLE == 1
+    CloudDatabase::instance.updateBatteryVoltage(48);
+
     throttleSensor->addListener([](const percentage_t& newValue) {
         printf("Throttle: %d", newValue);
         CloudDatabase::instance.updateThrottle(newValue);
@@ -234,9 +234,9 @@ void setup() {
     LoggerInit(1000, []() {
         char* row = new char[100];
         // TODO: Add pressure, and other metrics
-        sprintf(row, "%d,%f,%f,%d,%f,%f,%f,%f,%f\n", 0, CloudDatabase::instance.getThrottle(), CloudDatabase::instance.getSpeed(), CloudDatabase::instance.getRPM(), CloudDatabase::instance.getBatteryCurrent(), CloudDatabase::instance.getBatteryVoltage(), CloudDatabase::instance.getAccelerationX(), CloudDatabase::instance.getAccelerationY(), CloudDatabase::instance.getAccelerationZ());
+        sprintf(row, "%d,%f,%f,%d,%f,%f,%f,%f,%f\n", 0, CloudDatabase::instance.getThrottle(), CloudDatabase::instance.getSpeed(), CloudDatabase::instance.getRPM(), CloudDatabase::instance.getBatteryCurrent(), CloudDatabase::instance.getBatteryVoltage());
         return row;
-    }, "timestamp,throttle,speed,rpm,current,voltage,acc_x,acc_y,acc_z\n");
+    }, "timestamp,throttle,speed,rpm,current,voltage\n");
 #endif
 
 #if LOGGER_IOT == 1
@@ -330,6 +330,9 @@ void EventDataCallback(iCommsMessage_t *msg) {
         switch (code) {
             case DEADMAN:
 //                CloudDatabase::instance.updateMotorOn(status);
+                break;
+            case NEW_LAP:
+                CloudDatabase::instance.triggerLap();
             default:
                 break;
         }
@@ -379,6 +382,10 @@ void PressureDataCallback(iCommsMessage_t *msg) {
 void TemperatureDataCallback(iCommsMessage_t *msg) {
     float temp = readMsg(msg);
     CloudDatabase::instance.updatePressure(CloudDatabase::instance.getPressure(), temp);
+}
+
+void EfficiencyDataCallback(iCommsMessage_t *msg) {
+
 }
 
 #ifdef __cplusplus

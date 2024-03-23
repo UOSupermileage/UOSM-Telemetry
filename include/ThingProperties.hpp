@@ -15,10 +15,10 @@
 #define MOTOR_ON_TIMEOUT 500
 
 struct LapData {
-    float totalJoules;
-    int totalTime;
+    double totalJoules;
+    uint32_t totalTime;
 
-    LapData(float totalJoules, int totalTime) : totalJoules(totalJoules), totalTime(totalTime) {}
+    LapData(double totalJoules, uint32_t totalTime) : totalJoules(totalJoules), totalTime(totalTime) {}
 };
 
 struct MotorData {
@@ -29,6 +29,7 @@ struct MotorData {
 
 struct GPSData {
     CloudLocation coordinates;
+
     float speed = 0; // km/h
     float heading = 0;
     float altitude = 0;
@@ -37,6 +38,7 @@ struct GPSData {
 class CloudDatabase {
 private:
     std::vector<LapData> laps;
+
     CloudElectricCurrent batteryCurrent;
     CloudElectricPotential batteryVoltage;
     String canMessage;
@@ -50,6 +52,10 @@ private:
     GPSData gps;
     CloudVelocity speed;
     CloudFloat airSpeed;
+
+    CloudDatabase() {
+        laps.emplace_back(LapData(0, 0));
+    }
 
 public:
     static CloudDatabase instance;
@@ -100,12 +106,13 @@ public:
 
     void updateBatteryVoltage(float voltage) {
         batteryVoltage = voltage;
-//        LapData &currentLap = laps.back();
-//        currentLap.totalJoules += voltage * current;
     }
 
     void updateBatteryCurrent(float current) {
         batteryCurrent = current;
+
+        LapData &currentLap = laps.back();
+        currentLap.totalJoules += this->getBatteryVoltage() * current;
     }
 
     void updateAcceleration(acceleration_t acceleration) {
@@ -153,11 +160,42 @@ public:
     }
 
     void triggerLap() {
-        // Construct a new LapData
-        LapData &currentLap = laps.back();
-        currentLap.totalTime = 0;
 
+        if (laps.size() > 4) {
+            laps.erase(laps.begin());
+        }
+
+        // Construct a new LapData
         laps.emplace_back(0, 0);
+    }
+
+    void getLapEfficiencies(lap_efficiencies_t* efficiencies) {
+        if (!efficiencies) { return; }
+
+        uint8_t offset = 4 > laps.size() ? 4 : laps.size();
+
+        double largest = 0;
+
+        // Iterate over the last 4 elements in the vector to get the largest
+        for (auto it = laps.end() - offset; it < laps.end(); it++) {
+            if (it->totalJoules > largest) {
+                largest = it->totalJoules;
+            }
+        }
+
+        uint8_t efficiency_percentages[4];
+        for (auto it = laps.end() - offset; it < laps.end(); it++) {
+            uint8_t index = laps.end() - it;
+
+            if (index < 4) {
+                efficiency_percentages[index] = (uint8_t) ((it->totalJoules / largest) * 200);
+            }
+        }
+
+        efficiencies->lap_0 = efficiency_percentages[0];
+        efficiencies->lap_1 = efficiency_percentages[1];
+        efficiencies->lap_2 = efficiency_percentages[2];
+        efficiencies->lap_3 = efficiency_percentages[3];
     }
 };
 

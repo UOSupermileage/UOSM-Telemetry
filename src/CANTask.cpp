@@ -17,6 +17,7 @@ static rtos::Thread canThread;
 
 uint16_t pollingRate;
 
+#define EFFICIENCY_BROADCAST_RATE 10
 #define VOLTAGE_CURRENT_BROADCAST_RATE 5
 #define SPEED_BROADCAST_RATE 2
 
@@ -35,6 +36,9 @@ uint16_t pollingRate;
 
     uint8_t speedTxCounter = 0;
     const ICommsMessageInfo *speedInfo = CANMessageLookUpGetInfo(SPEED_DATA_ID);
+
+    uint8_t efficiencyTxCounter = 0;
+    const ICommsMessageInfo *efficiencyInfo = CANMessageLookUpGetInfo(EFFICIENCY_DATA_ID);
 
     while (true) {
         if (isInitialized == RESULT_FAIL) {
@@ -56,6 +60,16 @@ uint16_t pollingRate;
         if (speedTxCounter > SPEED_BROADCAST_RATE) {
             iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, CloudDatabase::instance.getSpeed());
             result_t _ = IComms_Transmit(&speedTxMsg);
+            speedTxCounter = 0;
+        }
+
+        efficiencyTxCounter++;
+        if (efficiencyTxCounter > EFFICIENCY_BROADCAST_RATE) {
+            lap_efficiencies_t efficiencies;
+            CloudDatabase::instance.getLapEfficiencies(&efficiencies);
+            iCommsMessage_t efficiencyTxMsg = IComms_CreateEfficiencyMessage(speedInfo->messageID, &efficiencies);
+            result_t _ = IComms_Transmit(&efficiencyTxMsg);
+
             speedTxCounter = 0;
         }
 
