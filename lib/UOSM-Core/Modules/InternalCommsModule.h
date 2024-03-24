@@ -38,6 +38,12 @@ PUBLIC iCommsMessage_t IComms_CreatePairUInt16BitMessage(uint16_t standardMessag
 
 PUBLIC iCommsMessage_t IComms_CreateLightsMessage(uint16_t standardMessageID, uint8_t code, uint8_t status);
 
+PUBLIC iCommsMessage_t IComms_CreatePairInt32Message(uint16_t standardMessageID, int32_t a, int32_t b);
+PUBLIC result_t IComms_ReadPairInt32Message(iCommsMessage_t *msg, int32_t* a, int32_t* b);
+
+PUBLIC iCommsMessage_t IComms_CreatePressureTemperatureMessage(uint16_t standardMessageID, pressure_t a, temperature_t b);
+PUBLIC result_t IComms_ReadPressureTemperatureMessage(iCommsMessage_t* msg, pressure_t* a, temperature_t* b);
+
 /**
  * Create an efficiency message that packs 4 laps into a CAN message
  * @param standardMessageID

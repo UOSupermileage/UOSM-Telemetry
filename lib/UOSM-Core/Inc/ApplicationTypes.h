@@ -79,8 +79,8 @@ typedef uint32_t ms_t;
 typedef uint16_t current_t;
 typedef uint16_t watt_hour_t;
 typedef uint8_t brightness_t;
-typedef uint32_t pressure_raw_t;
-typedef uint32_t temperature_raw_t;
+typedef int32_t pressure_t;
+typedef int32_t temperature_t;
 
 typedef struct {
     uint16_t standardMessageID; // 11 bit max
@@ -101,11 +101,6 @@ typedef struct {
     float heading;
     float altitude;
 } gps_coordinate_t;
-
-typedef struct {
-    float pressure;
-    float temp;
-} pressure_t;
 
 // Make sure to use the entire 32 bits for stable CAN transmission
 typedef union {
