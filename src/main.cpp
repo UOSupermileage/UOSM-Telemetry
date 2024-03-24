@@ -122,6 +122,86 @@ void IotTask() {
 }
 #endif
 
+static rtos::Thread canThread;
+
+uint16_t pollingRate;
+
+#define EFFICIENCY_BROADCAST_RATE 10
+#define VOLTAGE_CURRENT_BROADCAST_RATE 5
+#define SPEED_BROADCAST_RATE 2
+
+// RTOS Execution Loops
+[[noreturn]] void CANTask() {
+    pinMode(MCP2515_CS_PIN, OUTPUT);
+
+
+    printf("Starting CANTask");
+    SPI.begin();
+    SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE3));
+
+    result_t isInitialized = RESULT_FAIL;
+
+    uint8_t broadcast_voltage_current_counter = 0;
+    const ICommsMessageInfo *voltageCurrentInfo = CANMessageLookUpGetInfo(CURRENT_VOLTAGE_DATA_ID);
+
+    uint8_t speedTxCounter = 0;
+    const ICommsMessageInfo *speedInfo = CANMessageLookUpGetInfo(SPEED_DATA_ID);
+
+    uint8_t efficiencyTxCounter = 0;
+    const ICommsMessageInfo *efficiencyInfo = CANMessageLookUpGetInfo(EFFICIENCY_DATA_ID);
+
+    while (true) {
+        if (isInitialized == RESULT_FAIL) {
+            printf("\nInitializing CAN Hardware\n");
+            isInitialized = IComms_Init();
+            rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));
+//            continue;
+        } else {
+//            printf("Periodic Receive");
+//            IComms_PeriodicReceive();
+        }
+
+        IComms_PeriodicReceive();
+
+        if (broadcast_voltage_current_counter++ > VOLTAGE_CURRENT_BROADCAST_RATE) {
+            iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, CloudDatabase::instance.getBatteryVoltage(), CloudDatabase::instance.getBatteryCurrent());;
+            result_t _ = IComms_Transmit(&txMsg);
+            printf("Broadcast voltage and current.");
+            broadcast_voltage_current_counter = 0;
+        }
+
+        speedTxCounter++;
+        if (speedTxCounter > SPEED_BROADCAST_RATE) {
+            iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, CloudDatabase::instance.getSpeed());
+            result_t _ = IComms_Transmit(&speedTxMsg);
+            speedTxCounter = 0;
+        }
+
+        efficiencyTxCounter++;
+        if (efficiencyTxCounter > EFFICIENCY_BROADCAST_RATE) {
+            lap_efficiencies_t efficiencies;
+            CloudDatabase::instance.getLapEfficiencies(&efficiencies);
+            printf("Lap Efficiencies: %d %d %d %d\n", efficiencies.lap_0, efficiencies.lap_1, efficiencies.lap_2, efficiencies.lap_3);
+            iCommsMessage_t efficiencyTxMsg = IComms_CreateEfficiencyMessage(speedInfo->messageID, &efficiencies);
+            result_t r = IComms_Transmit(&efficiencyTxMsg);
+            printf("Eff Transmission Result: %d", r);
+
+            efficiencyTxCounter = 0;
+        }
+
+        rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));
+    }
+}
+
+void CANInit(
+        uint32_t stackSize,
+        osPriority_t priority,
+        uint16_t _pollingRate
+) {
+    printf("CANInit");
+    canThread.start(mbed::callback(CANTask));
+}
+
 void setup() {
     Serial.begin(serialBaudrate);
 

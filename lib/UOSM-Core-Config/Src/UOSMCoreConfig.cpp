@@ -43,9 +43,7 @@ void ExternalSerialPrint(const char * message, ...) {
 #elif MBED
     va_list args;
     va_start(args, message);
-//    sprintf(messageBuf, message, args);
     printf(message, args);
-//    Serial.print(message);
     va_end(args);
 #endif
 }
