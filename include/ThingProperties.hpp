@@ -125,7 +125,7 @@ public:
         canMessage = message;
     }
 
-    void updatePressure(float pressure, float temperature);
+    void updatePressure(pressure_t pressure, temperature_t temperature);
 
     void updateGPS(gps_coordinate_t coordinate) {
         gps.coordinates = {coordinate.longitude, coordinate.latitude};

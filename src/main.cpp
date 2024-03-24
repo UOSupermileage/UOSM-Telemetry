@@ -6,6 +6,7 @@
 
 #include "ValueSensor.hpp"
 #include "CANLogEntry.hpp"
+#include "CANMessageLookUpModule.h"
 #include "CANTask.hpp"
 #include "CANDriver.h"
 #include "PollingSensorTask.hpp"
@@ -454,14 +455,13 @@ void LightsDataCallback(iCommsMessage_t *msg) {
     // Do nothing, telemetry broadcasts this type of message
 }
 
-void PressureDataCallback(iCommsMessage_t *msg) {
-    float airPressure = readMsg(msg);
-    CloudDatabase::instance.updatePressure(airPressure, CloudDatabase::instance.getTemperature());
-}
+void PressureTemperatureDataCallback(iCommsMessage_t *msg) {
+    int32 pressure, temperature;
+    result_t r = IComms_ReadPressureTemperatureMessage(msg, &pressure, &temperature);
 
-void TemperatureDataCallback(iCommsMessage_t *msg) {
-    float temp = readMsg(msg);
-    CloudDatabase::instance.updatePressure(CloudDatabase::instance.getPressure(), temp);
+    if (r) {
+        CloudDatabase::instance.updatePressure(pressure, temperature);
+    }
 }
 
 void EfficiencyDataCallback(iCommsMessage_t *msg) {

@@ -30,9 +30,9 @@ const std::map<int, float> airDensityMap = {
         {60, 1.061}
 };
 
-void CloudDatabase::updatePressure(float pressure, float temperature) {
-    this->pressure = pressure;
-    this->temperature = temperature;
+void CloudDatabase::updatePressure(pressure_t pressure, temperature_t temperature) {
+    this->pressure = pressure / 1000;
+    this->temperature = temperature / 1000;
 
     // round air temperature to nearest 5
     int32_t roundedAirTemperature = (int) (MAP_INTERVAL * round(temperature / MAP_INTERVAL));
