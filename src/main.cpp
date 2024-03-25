@@ -131,6 +131,7 @@ uint16_t pollingRate;
 #define EFFICIENCY_BROADCAST_RATE 2
 #define VOLTAGE_CURRENT_BROADCAST_RATE 5
 #define SPEED_BROADCAST_RATE 2
+#define BREAKS_BROADCAST_RATE 2
 
 // RTOS Execution Loops
 [[noreturn]] void CANTask() {
@@ -148,6 +149,9 @@ uint16_t pollingRate;
 
     uint8_t efficiencyTxCounter = 0;
     const ICommsMessageInfo *efficiencyInfo = CANMessageLookUpGetInfo(EFFICIENCY_DATA_ID);
+
+    uint8_t breaksTxCounter = 0;
+    const ICommsMessageInfo *eventInfo = CANMessageLookUpGetInfo(EVENT_DATA_ID);
 
     while (true) {
         if (isInitialized == RESULT_FAIL) {
@@ -181,6 +185,13 @@ uint16_t pollingRate;
             printf("Eff Transmission Result: %d", r);
 
             efficiencyTxCounter = 0;
+        }
+
+        breaksTxCounter++;
+        if (breaksTxCounter > BREAKS_BROADCAST_RATE) {
+            iCommsMessage_t breaksTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BREAKS_ENABLED, CloudDatabase::instance.getBreaksPercentage() > 20);
+            result_t r = IComms_Transmit(&breaksTxMsg);
+            breaksTxCounter = 0;
         }
 
         rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));

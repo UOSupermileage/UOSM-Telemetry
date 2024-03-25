@@ -53,7 +53,8 @@ typedef enum {
     MOTOR_INITIALIZING,
     UNDERVOLTAGE,
     DRIVER_ENABLED,
-    NEW_LAP
+    NEW_LAP,
+    BREAKS_ENABLED
 } EventCode;
 
 typedef enum {
@@ -110,8 +111,7 @@ typedef union {
         uint32_t left_turn_enabled: 1;
         uint32_t right_turn_enabled: 1;
         uint32_t headlights_enabled: 1;
-        uint32_t brakelights_enabled: 1;
-        uint32_t low_beams_enabled: 27;
+        uint32_t low_beams_enabled: 28;
     };
 } lights_status_t;
 
