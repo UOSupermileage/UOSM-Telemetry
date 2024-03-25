@@ -106,21 +106,21 @@ typedef struct {
 typedef union {
     uint32_t all;
     struct {
-        uint32_t hazards_enabled:1;
-        uint32_t left_turn_enabled:1;
-        uint32_t right_turn_enabled:1;
-        uint32_t headlights_enabled:1;
-        uint32_t low_beams_enabled:28;
+        uint32_t hazards_enabled: 1;
+        uint32_t left_turn_enabled: 1;
+        uint32_t right_turn_enabled: 1;
+        uint32_t headlights_enabled: 1;
+        uint32_t low_beams_enabled: 28;
     };
 } lights_status_t;
 
 typedef union {
     uint32_t all;
     struct {
-        uint32_t lap_0:8;
-        uint32_t lap_1:8;
-        uint32_t lap_2:8;
-        uint32_t lap_3:8;
+        uint32_t lap_0: 8;
+        uint32_t lap_1: 8;
+        uint32_t lap_2: 8;
+        uint32_t lap_3: 8;
     };
 } lap_efficiencies_t;
 
