@@ -54,7 +54,7 @@ typedef enum {
     UNDERVOLTAGE,
     DRIVER_ENABLED,
     NEW_LAP,
-    BREAKS_ENABLED
+    BRAKES_ENABLED
 } EventCode;
 
 typedef enum {

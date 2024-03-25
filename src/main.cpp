@@ -131,7 +131,7 @@ uint16_t pollingRate;
 #define EFFICIENCY_BROADCAST_RATE 2
 #define VOLTAGE_CURRENT_BROADCAST_RATE 5
 #define SPEED_BROADCAST_RATE 2
-#define BREAKS_BROADCAST_RATE 2
+#define BRAKES_BROADCAST_RATE 2
 
 // RTOS Execution Loops
 [[noreturn]] void CANTask() {
@@ -150,7 +150,7 @@ uint16_t pollingRate;
     uint8_t efficiencyTxCounter = 0;
     const ICommsMessageInfo *efficiencyInfo = CANMessageLookUpGetInfo(EFFICIENCY_DATA_ID);
 
-    uint8_t breaksTxCounter = 0;
+    uint8_t brakesTxCounter = 0;
     const ICommsMessageInfo *eventInfo = CANMessageLookUpGetInfo(EVENT_DATA_ID);
 
     while (true) {
@@ -187,11 +187,18 @@ uint16_t pollingRate;
             efficiencyTxCounter = 0;
         }
 
-        breaksTxCounter++;
-        if (breaksTxCounter > BREAKS_BROADCAST_RATE) {
-            iCommsMessage_t breaksTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BREAKS_ENABLED, CloudDatabase::instance.getBreaksPercentage() > 20);
-            result_t r = IComms_Transmit(&breaksTxMsg);
-            breaksTxCounter = 0;
+        brakesTxCounter++;
+        if (brakesTxCounter > BRAKES_BROADCAST_RATE) {
+
+            flag_status_t brakesEnabled = Clear;
+
+#if SENSOR_BRAKES == 1
+            int brakesPinReading = analogRead(BRAKES_INPUT_PIN);
+#endif
+
+            iCommsMessage_t brakesTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BRAKES_ENABLED, brakesEnabled);
+            result_t r = IComms_Transmit(&brakesTxMsg);
+            brakesTxCounter = 0;
         }
 
         rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));
@@ -305,6 +312,11 @@ void setup() {
         CloudDatabase::instance.updateGPS(newValue);
     });
     gpsSensorTask = new PollingSensorTask<gps_coordinate_t>(gpsSensor, 200, "T_GPSSensor", 1024 * 10, osPriorityNormal);
+#endif
+
+#if SENSOR_BRAKES == 1
+    pinMode(BRAKES_OUTPUT_PIN, OUTPUT);
+    pinMode(BRAKES_INPUT_PIN, INPUT_PULLDOWN);
 #endif
 
 #if ENABLE_CAN == 1

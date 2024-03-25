@@ -52,7 +52,7 @@ private:
     GPSData gps;
     CloudVelocity speed;
     CloudFloat airSpeed;
-    CloudPercentage breaksPercentage;
+    CloudPercentage brakesPercentage;
 
     CloudDatabase() {
         laps.emplace_back(LapData(0, 0));
@@ -105,12 +105,12 @@ public:
 
     float getTemperature() { return temperature; }
 
-    float getBreaksPercentage() {
-        return breaksPercentage;
+    float getBrakesPercentage() {
+        return brakesPercentage;
     }
 
-    void updateBreaksPercentage(float percentage) {
-        breaksPercentage = percentage;
+    void updateBrakesPercentage(float percentage) {
+        brakesPercentage = percentage;
     }
 
     void updateBatteryVoltage(float voltage) {

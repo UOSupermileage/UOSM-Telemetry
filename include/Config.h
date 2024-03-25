@@ -13,6 +13,7 @@
 #define SENSOR_THROTTLE 1
 #define SENSOR_SPEEDOMETER 1
 #define SENSOR_RPM 1
+#define SENSOR_BRAKES 1
 
 #define BROADCAST_CAN 1
 
@@ -20,5 +21,8 @@
 
 #define LOGGER_SD 0
 #define LOGGER_IOT 0
+
+#define BRAKES_OUTPUT_PIN 20
+#define BRAKES_INPUT_PIN 21
 
 #endif //UOSM_TELEMETRY_PIO_CONFIG_H
