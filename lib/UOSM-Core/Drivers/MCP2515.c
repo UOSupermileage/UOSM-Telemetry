@@ -1,4 +1,5 @@
 #include "MCP2515.h"
+#include "stm32h7xx_hal.h"
 
 /* Pin 설정에 맞게 수정필요. Modify below items for your SPI configurations */
 #ifdef EXT_SPI_CAN
@@ -16,16 +17,20 @@ bool MCP2515_Initialize(void)
 {
   MCP2515_CS_HIGH();
 
+  DebugPrint("Initialized MCP2515");
+
   uint8_t loop = 10;
 
   do {
     /* SPI Ready 확인 */
     if(MCP2515_SPI_READY) {
+    	  DebugPrint("Succeeded to init MCP");
     	return true;
     }
     loop--;
   } while(loop > 0);
 
+  DebugPrint("Failed to init MCP");
   return false;
 }
 

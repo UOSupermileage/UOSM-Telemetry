@@ -16,7 +16,7 @@ extern "C" {
 
 // CAN Message IDs for each piece of data
 // Details can be found on the CAN Reference Document
-#define NUMBER_CAN_MESSAGE_IDS 10
+#define NUMBER_CAN_MESSAGE_IDS 9
 
 typedef enum ICommsMessageLookUpIndex {
     THROTTLE_DATA_ID,
@@ -38,7 +38,7 @@ typedef struct {
     uint8_t numberOfBytes;
 
     // Lambda Function. Instructions to execute when a message of this type is received.
-    void (*canMessageCallback)(iCommsMessage_t* msg);
+    void (* canMessageCallback)(iCommsMessage_t* msg);
 
 } ICommsMessageInfo;
 

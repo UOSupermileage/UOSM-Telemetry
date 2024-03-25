@@ -15,6 +15,9 @@
 constexpr uint32_t serialBaudrate = 115200;
 constexpr uint8_t defaultBufferSize = 1;
 
+SPI_HandleTypeDef hspi2;
+
+
 #if LOGGER_SD == 1
 #include "LoggerTask.hpp"
 #endif
@@ -127,68 +130,129 @@ static rtos::Thread canThread;
 
 uint16_t pollingRate;
 
-#define EFFICIENCY_BROADCAST_RATE 10
+#define EFFICIENCY_BROADCAST_RATE 2
 #define VOLTAGE_CURRENT_BROADCAST_RATE 5
 #define SPEED_BROADCAST_RATE 2
 
 // RTOS Execution Loops
 [[noreturn]] void CANTask() {
     pinMode(MCP2515_CS_PIN, OUTPUT);
-
-
-    printf("Starting CANTask");
     SPI.begin();
-    SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE3));
+//    SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE3));
 
-    result_t isInitialized = RESULT_FAIL;
+//    hspi2.Instance = SPI2;
+//    hspi2.Init.Mode = SPI_MODE_MASTER;
+//    hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+//    hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+//    hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
+//    hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
+//    hspi2.Init.NSS = SPI_NSS_SOFT;
+//    hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+//    hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
+//    hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
+//    hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+//    hspi2.Init.CRCPolynomial = 0x0;
+//    hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+//    hspi2.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
+//    hspi2.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
+//    hspi2.Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+//    hspi2.Init.RxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+//    hspi2.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
+//    hspi2.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
+//    hspi2.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
+//    hspi2.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
+//    hspi2.Init.IOSwap = SPI_IO_SWAP_DISABLE;
+//    if (HAL_SPI_Init(&hspi2) != HAL_OK)
+//    {
+//        DebugPrint("Error SPI");
+//        while (true) {}
+//    }
+//
+//
+//    GPIO_InitTypeDef GPIO_InitStruct = {0};
+//    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+//        /* USER CODE BEGIN SPI2_MspInit 0 */
+//
+//        /* USER CODE END SPI2_MspInit 0 */
+//
+//        /** Initializes the peripherals clock
+//        */
+//        PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI2;
+//        PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL;
+//        if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+//        {
+//            DebugPrint("Error SPI Pins");
+//            while (true) {}
+//        }
+//
+//        /* Peripheral clock enable */
+//        __HAL_RCC_SPI2_CLK_ENABLE();
+//
+//        __HAL_RCC_GPIOI_CLK_ENABLE();
+//        __HAL_RCC_GPIOC_CLK_ENABLE();
+//        /**SPI2 GPIO Configuration
+//        PI1     ------> SPI2_SCK
+//        PC2     ------> SPI2_MISO
+//        PC3     ------> SPI2_MOSI
+//        */
+//        GPIO_InitStruct.Pin = GPIO_PIN_1;
+//        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+//        GPIO_InitStruct.Pull = GPIO_NOPULL;
+//        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+//        GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
+//        HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
+//
+//        GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
+//        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+//        GPIO_InitStruct.Pull = GPIO_NOPULL;
+//        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+//        GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
+//        HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    uint8_t broadcast_voltage_current_counter = 0;
-    const ICommsMessageInfo *voltageCurrentInfo = CANMessageLookUpGetInfo(CURRENT_VOLTAGE_DATA_ID);
+        /* USER CODE BEGIN SPI2_MspInit 1 */
 
-    uint8_t speedTxCounter = 0;
-    const ICommsMessageInfo *speedInfo = CANMessageLookUpGetInfo(SPEED_DATA_ID);
+        /* USER CODE END SPI2_MspInit 1 */
 
-    uint8_t efficiencyTxCounter = 0;
-    const ICommsMessageInfo *efficiencyInfo = CANMessageLookUpGetInfo(EFFICIENCY_DATA_ID);
+
+    result_t isInitialized = IComms_Init();
+
+//    uint8_t broadcast_voltage_current_counter = 0;
+//    const ICommsMessageInfo *voltageCurrentInfo = CANMessageLookUpGetInfo(CURRENT_VOLTAGE_DATA_ID);
+//
+//    uint8_t speedTxCounter = 0;
+//    const ICommsMessageInfo *speedInfo = CANMessageLookUpGetInfo(SPEED_DATA_ID);
+//
+//    uint8_t efficiencyTxCounter = 0;
+//    const ICommsMessageInfo *efficiencyInfo = CANMessageLookUpGetInfo(EFFICIENCY_DATA_ID);
 
     while (true) {
-        if (isInitialized == RESULT_FAIL) {
-            printf("\nInitializing CAN Hardware\n");
-            isInitialized = IComms_Init();
-            rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));
-//            continue;
-        } else {
-//            printf("Periodic Receive");
-//            IComms_PeriodicReceive();
-        }
-
         IComms_PeriodicReceive();
 
-        if (broadcast_voltage_current_counter++ > VOLTAGE_CURRENT_BROADCAST_RATE) {
-            iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, CloudDatabase::instance.getBatteryVoltage(), CloudDatabase::instance.getBatteryCurrent());;
-            result_t _ = IComms_Transmit(&txMsg);
-            printf("Broadcast voltage and current.");
-            broadcast_voltage_current_counter = 0;
-        }
-
-        speedTxCounter++;
-        if (speedTxCounter > SPEED_BROADCAST_RATE) {
-            iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, CloudDatabase::instance.getSpeed());
-            result_t _ = IComms_Transmit(&speedTxMsg);
-            speedTxCounter = 0;
-        }
-
-        efficiencyTxCounter++;
-        if (efficiencyTxCounter > EFFICIENCY_BROADCAST_RATE) {
-            lap_efficiencies_t efficiencies;
-            CloudDatabase::instance.getLapEfficiencies(&efficiencies);
-            printf("Lap Efficiencies: %d %d %d %d\n", efficiencies.lap_0, efficiencies.lap_1, efficiencies.lap_2, efficiencies.lap_3);
-            iCommsMessage_t efficiencyTxMsg = IComms_CreateEfficiencyMessage(speedInfo->messageID, &efficiencies);
-            result_t r = IComms_Transmit(&efficiencyTxMsg);
-            printf("Eff Transmission Result: %d", r);
-
-            efficiencyTxCounter = 0;
-        }
+//        if (broadcast_voltage_current_counter++ > VOLTAGE_CURRENT_BROADCAST_RATE) {
+//            iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, CloudDatabase::instance.getBatteryVoltage(), CloudDatabase::instance.getBatteryCurrent());;
+//            result_t _ = IComms_Transmit(&txMsg);
+//            printf("Broadcast voltage and current.");
+//            broadcast_voltage_current_counter = 0;
+//        }
+//
+//        speedTxCounter++;
+//        if (speedTxCounter > SPEED_BROADCAST_RATE) {
+//            iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, CloudDatabase::instance.getSpeed());
+//            result_t _ = IComms_Transmit(&speedTxMsg);
+//            speedTxCounter = 0;
+//        }
+//
+//        efficiencyTxCounter++;
+//        if (efficiencyTxCounter > EFFICIENCY_BROADCAST_RATE) {
+//            lap_efficiencies_t efficiencies;
+//            CloudDatabase::instance.getLapEfficiencies(&efficiencies);
+//            printf("Lap Efficiencies: %d %d %d %d\n", efficiencies.lap_0, efficiencies.lap_1, efficiencies.lap_2, efficiencies.lap_3);
+//            iCommsMessage_t efficiencyTxMsg = IComms_CreateEfficiencyMessage(efficiencyInfo->messageID, &efficiencies);
+//            result_t r = IComms_Transmit(&efficiencyTxMsg);
+//            printf("Eff Transmission Result: %d", r);
+//
+//            efficiencyTxCounter = 0;
+//        }
 
         rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));
     }
@@ -304,8 +368,8 @@ void setup() {
 
 #if ENABLE_CAN == 1
     pinMode(MCP2515_CS_PIN, OUTPUT);
-    SPI.begin();
-    SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE3));
+//    SPI.begin();
+//    SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE3));
     printf("Starting CANInit!\n");
     CANInit(1024 * 10, (osPriority_t) 7, 400);
 #endif
@@ -363,6 +427,7 @@ extern "C" {
 void ThrottleDataCallback(iCommsMessage_t *msg) {
     // Read the CAN Message as a 32bit int, then cast it to a percentage_t
     auto throttle = (percentage_t) readMsg(msg);
+    DebugPrint("Throttle");
 
     // Explicitly collect the throttle for the throttle sensor
 #if SENSOR_THROTTLE == 1
