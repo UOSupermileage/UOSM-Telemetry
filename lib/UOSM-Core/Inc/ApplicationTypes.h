@@ -110,7 +110,8 @@ typedef union {
         uint32_t left_turn_enabled: 1;
         uint32_t right_turn_enabled: 1;
         uint32_t headlights_enabled: 1;
-        uint32_t low_beams_enabled: 28;
+        uint32_t brakelights_enabled: 1;
+        uint32_t low_beams_enabled: 27;
     };
 } lights_status_t;
 
@@ -123,7 +124,6 @@ typedef union {
         uint32_t lap_3: 8;
     };
 } lap_efficiencies_t;
-
 #ifdef __cplusplus
 }
 #endif
