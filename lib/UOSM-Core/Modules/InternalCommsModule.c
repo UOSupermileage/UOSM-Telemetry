@@ -247,7 +247,6 @@ PUBLIC uint16_pair_t readMsgPairUInt16Bit(iCommsMessage_t* msg) {
 
     pair.b = msg->data[3] << 8;
     pair.b |= msg->data[2];
-
     return pair;
 }
 
