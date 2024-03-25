@@ -1,5 +1,4 @@
 #include "MCP2515.h"
-#include "stm32h7xx_hal.h"
 
 /* Pin 설정에 맞게 수정필요. Modify below items for your SPI configurations */
 #ifdef EXT_SPI_CAN

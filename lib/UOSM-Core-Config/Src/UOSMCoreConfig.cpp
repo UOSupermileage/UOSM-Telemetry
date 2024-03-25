@@ -26,15 +26,6 @@ void GPIO_DigitalWrite(uint8_t pin, uint8_t val) {
 #endif
 }
 
-void SPI_CS_HIGH() {
-    digitalWrite(MCP2515_CS_PIN, HIGH);
-//    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
-}
-void SPI_CS_LOW() {
-    digitalWrite(MCP2515_CS_PIN, LOW);
-//    SPI.endTransaction();
-}
-
 void SPI_Transfer(void *data, uint32_t size) {
 #ifdef ESP32
     SPI.transfer(data, size);

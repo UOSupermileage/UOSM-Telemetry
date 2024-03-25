@@ -15,8 +15,6 @@
 constexpr uint32_t serialBaudrate = 115200;
 constexpr uint8_t defaultBufferSize = 1;
 
-SPI_HandleTypeDef hspi2;
-
 
 #if LOGGER_SD == 1
 #include "LoggerTask.hpp"
@@ -140,7 +138,7 @@ uint16_t pollingRate;
     SPI.begin();
     SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
 
-    result_t isInitialized = IComms_Init();
+    result_t isInitialized = RESULT_FAIL;
 
     uint8_t broadcast_voltage_current_counter = 0;
     const ICommsMessageInfo *voltageCurrentInfo = CANMessageLookUpGetInfo(CURRENT_VOLTAGE_DATA_ID);
@@ -152,6 +150,11 @@ uint16_t pollingRate;
     const ICommsMessageInfo *efficiencyInfo = CANMessageLookUpGetInfo(EFFICIENCY_DATA_ID);
 
     while (true) {
+        if (isInitialized == RESULT_FAIL) {
+            isInitialized = IComms_Init();
+            continue;
+        }
+
         IComms_PeriodicReceive();
 
         if (broadcast_voltage_current_counter++ > VOLTAGE_CURRENT_BROADCAST_RATE) {
@@ -215,7 +218,8 @@ void setup() {
         CloudDatabase::instance.updateBatteryVoltage(newValue * 19.29);
         printf("Voltage: %f", newValue * 19.29);
     });
-    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, osPriorityNormal);
+    // TODO: Combine both sensors into a single task to avoid reading too close in timing to each other
+//    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, osPriorityNormal);
 #endif
 
 #if SENSOR_CURRENT == 1
@@ -224,7 +228,7 @@ void setup() {
         CloudDatabase::instance.updateBatteryCurrent(newValue / 12.5f);
         printf("Current: %fA\n", newValue / 12.5f);
     });
-//    currentSensorTask = new PollingSensorTask<voltage_t>(currentSensor, 200, "T_CurrentSensor", 1024 * 10, osPriorityNormal);
+    currentSensorTask = new PollingSensorTask<voltage_t>(currentSensor, 200, "T_CurrentSensor", 1024 * 10, osPriorityNormal);
 #endif
 
 #if SENSOR_ACCELEROMETER == 1
