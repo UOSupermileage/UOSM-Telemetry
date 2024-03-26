@@ -8,8 +8,9 @@
 #include <SPI.h>
 #elif MBED
 #include <Arduino.h>
-#include <Arduino_PortentaBreakout.h>
 #include <LibPrintf.h>
+#include <SPI.h>
+
 #endif
 
 #ifdef __cplusplus
@@ -22,7 +23,7 @@ void GPIO_DigitalWrite(uint8_t pin, uint8_t val) {
 #ifdef ESP32
     digitalWrite(pin, val);
 #elif MBED
-    Breakout.digitalWrite((breakoutPin) pin, (PinStatus) val);
+    digitalWrite(pin, val);
 #endif
 }
 

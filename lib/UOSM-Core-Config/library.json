@@ -23,7 +23,7 @@
   },
   "dependencies":
   {
-    "arduino-libraries/Arduino_PortentaBreakout": "git@github.com:arduino-libraries/Arduino_PortentaBreakout.git",
-    "embeddedartistry/LibPrintf": "^1.2.13"
+    "embeddedartistry/LibPrintf": "^1.2.13",
+    "arduino-libraries/SD": "*"
   }
 }
