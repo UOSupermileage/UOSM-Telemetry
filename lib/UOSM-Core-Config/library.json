@@ -24,6 +24,6 @@
   "dependencies":
   {
     "embeddedartistry/LibPrintf": "^1.2.13",
-    "arduino-libraries/SD": "*"
+    "arduino-libraries/SD": "^1.2.4"
   }
 }
