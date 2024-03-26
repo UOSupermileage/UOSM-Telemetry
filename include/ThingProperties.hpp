@@ -15,10 +15,10 @@
 #define MOTOR_ON_TIMEOUT 500
 
 struct LapData {
-    double totalJoules;
+    uint64_t totalJoules;
     uint32_t totalTime;
 
-    LapData(double totalJoules, uint32_t totalTime) : totalJoules(totalJoules), totalTime(totalTime) {}
+    LapData(uint64_t totalJoules, uint32_t totalTime) : totalJoules(totalJoules), totalTime(totalTime) {}
 };
 
 struct MotorData {
@@ -40,7 +40,10 @@ private:
     std::vector<LapData> laps;
 
     CloudElectricCurrent batteryCurrent;
+    current_t raw_batteryCurrent;
     CloudElectricPotential batteryVoltage;
+    voltage_t raw_batteryVoltage;
+
     String canMessage;
     CloudPercentage throttle;
     MotorData motor;
@@ -85,9 +88,9 @@ public:
         ArduinoCloud.update();
     }
 
-    float getBatteryVoltage() { return batteryVoltage; }
+    voltage_t getBatteryVoltage() { return raw_batteryVoltage; }
 
-    float getBatteryCurrent() { return batteryCurrent; }
+    current_t getBatteryCurrent() { return raw_batteryCurrent; }
 
     float getAccelerationX() { return accelerationX; }
 
@@ -113,15 +116,17 @@ public:
         brakesPercentage = percentage;
     }
 
-    void updateBatteryVoltage(float voltage) {
-        batteryVoltage = voltage;
+    void updateBatteryVoltage(voltage_t voltage) {
+        raw_batteryVoltage = voltage;
+        batteryVoltage = (float) voltage / 1000;
     }
 
-    void updateBatteryCurrent(float current) {
-        batteryCurrent = current;
+    void updateBatteryCurrent(current_t current) {
+        raw_batteryCurrent = current;
+        batteryCurrent = (float) current / 1000;
 
         LapData &currentLap = laps.back();
-        currentLap.totalJoules += this->getBatteryVoltage() * current;
+        currentLap.totalJoules += (uint64_t) raw_batteryVoltage * raw_batteryCurrent;
     }
 
     void updateAcceleration(acceleration_t acceleration) {
@@ -179,11 +184,11 @@ public:
     }
 
     void getLapEfficiencies(lap_efficiencies_t* efficiencies) {
-        if (!efficiencies) { return; }
+        if (efficiencies == nullptr) { return; }
 
         uint8_t offset = 4 > laps.size() ? 4 : laps.size();
 
-        double largest = 0;
+        uint64_t largest = 1;
 
         // Iterate over the last 4 elements in the vector to get the largest
         for (auto it = laps.end() - offset; it < laps.end(); it++) {
@@ -192,7 +197,7 @@ public:
             }
         }
 
-        uint8_t efficiency_percentages[4];
+        uint8_t efficiency_percentages[4] { 0, 0, 0, 0};
         for (auto it = laps.end() - offset; it < laps.end(); it++) {
             uint8_t index = laps.end() - it;
 

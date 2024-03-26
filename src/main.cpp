@@ -245,11 +245,14 @@ void setup() {
 #if SENSOR_VOLTAGE == 1
     voltageSensor = new VoltageSensor(Wire, VoltageSensor::VoltageSensorMode::Differential_0_1, 0, 0x40);
     voltageSensor->addListener([](const voltage_t& newValue) {
-        CloudDatabase::instance.updateBatteryVoltage(newValue * 19.29);
-        printf("Voltage: %f", newValue * 19.29);
+        float v = (newValue * 19.29) / 1000;
+        CloudDatabase::instance.updateBatteryVoltage(v);
+        printf("Voltage: %f", v);
     });
     // TODO: Combine both sensors into a single task to avoid reading too close in timing to each other
 //    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, osPriorityNormal);
+#else
+    CloudDatabase::instance.updateBatteryVoltage(48000);
 #endif
 
 #if SENSOR_CURRENT == 1

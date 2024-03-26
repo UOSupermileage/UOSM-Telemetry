@@ -68,8 +68,8 @@ public:
             }
 
             ads->read_conversion();
-            float voltage = ads->get_millivolts(3300.0);
-            printf("Collected voltage (mV): %f, (raw): %li\n", voltage, ads->get_raw());
+            voltage_t voltage = (voltage_t) ads->get_millivolts(3300.0);
+            printf("Collected voltage (mV): %d\n", voltage);
 
             notify(voltage);
         }
