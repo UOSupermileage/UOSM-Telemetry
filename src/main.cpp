@@ -194,9 +194,21 @@ uint16_t pollingRate;
 
 #if SENSOR_BRAKES == 1
             int brakesPinReading = analogRead(BRAKES_INPUT_PIN);
+            float percentage = (float) brakesPinReading * 100 / (float) 1024;
+            CloudDatabase::instance.updateBrakesPercentage(percentage);
+
+            Serial.print("Brakes: ");
+            Serial.print(percentage);
+            Serial.println();
+
+            brakesEnabled = percentage > 50 ? Set : Clear;
+
+            if (brakesEnabled == Set) {
+                DebugPrint("Brakes Enabled");
+            }
 #endif
 
-            iCommsMessage_t brakesTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BRAKES_ENABLED, brakesEnabled);
+            iCommsMessage_t brakesTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BRAKES_ENABLED, brakesEnabled == Set ? 1 : 0);
             result_t r = IComms_Transmit(&brakesTxMsg);
             brakesTxCounter = 0;
         }
