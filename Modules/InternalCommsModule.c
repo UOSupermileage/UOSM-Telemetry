@@ -114,7 +114,11 @@ PUBLIC void IComms_PeriodicReceive() {
             if (lookupTableIndex < NUMBER_CAN_MESSAGE_IDS) {
                 // DebugPrint("%s Executing callback", ICM_TAG);
                 // Execute callback for message
-                CANMessageLookUpTable[lookupTableIndex].canMessageCallback(&rxMsg);
+                if (CANMessageLookUpTable[lookupTableIndex].numberOfBytes == rxMsg.dataLength) {
+                    CANMessageLookUpTable[lookupTableIndex].canMessageCallback(&rxMsg);
+                } else {
+                    DebugPrint("%s message id [%x] has incorrect length of [%d]", ICM_TAG, rxMsg.standardMessageID, rxMsg.dataLength);
+                }
             } else {
                 DebugPrint("%s Unknown message id [%x], index [%d]", ICM_TAG, rxMsg.standardMessageID,
                            lookupTableIndex);
@@ -230,10 +234,12 @@ PUBLIC result_t IComms_ReadPairInt32Message(iCommsMessage_t* msg, int32_t* a, in
     return RESULT_OK;
 }
 
-PUBLIC iCommsMessage_t
-IComms_CreatePressureTemperatureMessage(uint16_t standardMessageID, pressure_t a, temperature_t b) {}
-
-PUBLIC result_t IComms_ReadPressureTemperatureMessage(iCommsMessage_t* msg, pressure_t* a, temperature_t* b);
+PUBLIC iCommsMessage_t IComms_CreatePressureTemperatureMessage(uint16_t standardMessageID, pressure_t a, temperature_t b) {
+    return IComms_CreatePairInt32Message(standardMessageID, a, b);
+}
+PUBLIC result_t IComms_ReadPressureTemperatureMessage(iCommsMessage_t* msg, pressure_t* a, temperature_t* b) {
+    return IComms_ReadPairInt32Message(msg, a, b);
+}
 
 PUBLIC uint16_pair_t readMsgPairUInt16Bit(iCommsMessage_t* msg) {
     uint16_pair_t pair = {};
@@ -245,7 +251,6 @@ PUBLIC uint16_pair_t readMsgPairUInt16Bit(iCommsMessage_t* msg) {
 
     pair.b = msg->data[3] << 8;
     pair.b |= msg->data[2];
-
     return pair;
 }
 
