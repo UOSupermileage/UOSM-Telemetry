@@ -44,6 +44,9 @@ private:
     CloudElectricPotential batteryVoltage;
     voltage_t raw_batteryVoltage;
 
+    CloudVelocity speed;
+    speed_t raw_speed;
+
     String canMessage;
     CloudPercentage throttle;
     MotorData motor;
@@ -53,7 +56,6 @@ private:
     CloudPressure pressure;
     CloudTemperature temperature;
     GPSData gps;
-    CloudVelocity speed;
     CloudFloat airSpeed;
     CloudPercentage brakesPercentage;
 
@@ -102,7 +104,7 @@ public:
 
     float getThrottle() { return throttle; }
 
-    float getSpeed() { return speed; }
+    speed_t getSpeed() { return raw_speed; }
 
     float getPressure() { return pressure; }
 
@@ -167,6 +169,7 @@ public:
     void updateSpeed(speed_t s) {
         // store in km / h
         speed = (float) s / 1000;
+        raw_speed = speed;
     }
 
     void updateThrottle(percentage_t p) {

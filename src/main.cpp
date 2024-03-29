@@ -171,7 +171,8 @@ uint16_t pollingRate;
         speedTxCounter++;
         if (speedTxCounter > SPEED_BROADCAST_RATE) {
             iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, CloudDatabase::instance.getSpeed());
-            result_t _ = IComms_Transmit(&speedTxMsg);
+            result_t r = IComms_Transmit(&speedTxMsg);
+            printf("Sending Speed [%d] Result: %d\n", CloudDatabase::instance.getSpeed(), r);
             speedTxCounter = 0;
         }
 
@@ -193,22 +194,20 @@ uint16_t pollingRate;
             flag_status_t brakesEnabled = Clear;
 
 #if SENSOR_BRAKES == 1
-            int brakesPinReading = analogRead(BRAKES_INPUT_PIN);
-            float percentage = (float) brakesPinReading * 100 / (float) 1024;
+            PinStatus brakesPinReading = digitalRead(BRAKES_INPUT_PIN);
+            float percentage = (float) brakesPinReading * 100;
             CloudDatabase::instance.updateBrakesPercentage(percentage);
 
             Serial.print("Brakes: ");
             Serial.print(percentage);
             Serial.println();
 
-            brakesEnabled = percentage > 50 ? Set : Clear;
-
-            if (brakesEnabled == Set) {
+            if (brakesPinReading) {
                 DebugPrint("Brakes Enabled");
             }
 #endif
 
-            iCommsMessage_t brakesTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BRAKES_ENABLED, brakesEnabled == Set ? 1 : 0);
+            iCommsMessage_t brakesTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BRAKES_ENABLED, brakesPinReading == HIGH ? Set : Clear);
             result_t r = IComms_Transmit(&brakesTxMsg);
             brakesTxCounter = 0;
         }
@@ -314,6 +313,7 @@ void setup() {
     speedometer->addListener([](const speed_t& newValue) {
         CloudDatabase::instance.updateSpeed(newValue);
         printf("Speed: %d", newValue);
+        printf("Speed: %d", newValue);
     });
 
     speedometerTask = new PollingSensorTask<speed_t>(speedometer, 200, "T_Speedometer", 1024 * 10, osPriorityNormal);
@@ -331,6 +331,7 @@ void setup() {
 
 #if SENSOR_BRAKES == 1
     pinMode(BRAKES_OUTPUT_PIN, OUTPUT);
+    digitalWrite(BRAKES_OUTPUT_PIN, HIGH);
     pinMode(BRAKES_INPUT_PIN, INPUT_PULLDOWN);
 #endif
 
