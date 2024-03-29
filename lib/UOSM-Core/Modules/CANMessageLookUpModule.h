@@ -46,6 +46,8 @@ extern const ICommsMessageInfo CANMessageLookUpTable[NUMBER_CAN_MESSAGE_IDS];
 
 PUBLIC const ICommsMessageInfo* CANMessageLookUpGetInfo(ICommsMessageLookUpIndex id);
 
+void CANExecute(iCommsMessage_t *msg);
+
 #ifdef __cplusplus
 }
 #endif

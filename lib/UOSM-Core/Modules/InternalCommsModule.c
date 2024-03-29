@@ -115,7 +115,8 @@ PUBLIC void IComms_PeriodicReceive() {
                 // DebugPrint("%s Executing callback", ICM_TAG);
                 // Execute callback for message
                 if (CANMessageLookUpTable[lookupTableIndex].numberOfBytes == rxMsg.dataLength) {
-                    CANMessageLookUpTable[lookupTableIndex].canMessageCallback(&rxMsg);
+//                    CANMessageLookUpTable[lookupTableIndex].canMessageCallback(&rxMsg);
+                    CANExecute(&rxMsg);
                 } else {
                     DebugPrint("%s message id [%x] has incorrect length of [%d]", ICM_TAG, rxMsg.standardMessageID, rxMsg.dataLength);
                 }
@@ -261,7 +262,7 @@ PUBLIC iCommsMessage_t IComms_CreateEfficiencyMessage(uint16_t standardMessageID
     data[2] = efficiencies->lap_2;
     data[3] = efficiencies->lap_3;
 
-    return IComms_CreateMessage(standardMessageID, 2, data);
+    return IComms_CreateMessage(standardMessageID, 4, data);
 }
 
 PUBLIC result_t IComms_ReadEfficiencyMessage(iCommsMessage_t* msg, lap_efficiencies_t* result) {

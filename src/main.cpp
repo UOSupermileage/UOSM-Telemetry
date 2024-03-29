@@ -86,6 +86,7 @@ ValueSensor<percentage_t>* throttleSensor = new ValueSensor<percentage_t>();
 void hallInterupt();
 Speedometer* speedometer;
 PollingSensorTask<speed_t>* speedometerTask;
+
 #endif
 
 #if SENSOR_RPM == 1
@@ -194,8 +195,8 @@ uint16_t pollingRate;
             flag_status_t brakesEnabled = Clear;
 
 #if SENSOR_BRAKES == 1
-            PinStatus brakesPinReading = digitalRead(BRAKES_INPUT_PIN);
-            float percentage = (float) brakesPinReading * 100;
+            int brakesPinReading =  digitalRead(BRAKES_INPUT_PIN);//1; // analogRead(BRAKES_INPUT_PIN) > 500;
+            float percentage = (float) (brakesPinReading) * 100;
             CloudDatabase::instance.updateBrakesPercentage(percentage);
 
             Serial.print("Brakes: ");
@@ -209,6 +210,7 @@ uint16_t pollingRate;
 
             iCommsMessage_t brakesTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BRAKES_ENABLED, brakesPinReading == HIGH ? Set : Clear);
             result_t r = IComms_Transmit(&brakesTxMsg);
+            printf("brakes r: %d", r);
             brakesTxCounter = 0;
         }
 
@@ -308,7 +310,13 @@ void setup() {
 #if SENSOR_SPEEDOMETER == 1
     speedometer = new Speedometer();
 
-    attachInterrupt(digitalPinToInterrupt(SPEEDOMETER_PIN), hallInterupt, HIGH);
+    if (digitalPinToInterrupt(SPEEDOMETER_PIN) != -1) {
+        attachInterrupt(SPEEDOMETER_PIN, hallInterupt, RISING);
+    } else {
+        while (true) {
+            DebugPrint("Unsupported speedometer pin");
+        }
+    }
 
     speedometer->addListener([](const speed_t& newValue) {
         CloudDatabase::instance.updateSpeed(newValue);
@@ -487,11 +495,15 @@ void LightsDataCallback(iCommsMessage_t *msg) {
 }
 
 void PressureTemperatureDataCallback(iCommsMessage_t *msg) {
+
+    DebugPrint("Received PressureTemperature");
+
     int32 pressure, temperature;
     result_t r = IComms_ReadPressureTemperatureMessage(msg, &pressure, &temperature);
 
     if (r) {
         CloudDatabase::instance.updatePressure(pressure, temperature);
+        printf("Update Pressure: %ld, %ld", pressure, temperature);
     }
 }
 

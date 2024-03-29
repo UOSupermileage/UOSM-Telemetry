@@ -43,3 +43,45 @@ const ICommsMessageInfo CANMessageLookUpTable[NUMBER_CAN_MESSAGE_IDS] = {
 
 PUBLIC const ICommsMessageInfo*
 CANMessageLookUpGetInfo(ICommsMessageLookUpIndex id) { return &CANMessageLookUpTable[id]; }
+
+void CANExecute(iCommsMessage_t *msg) {
+    if (!msg) {
+        DebugPrint("Null Ptr msg");
+        return;
+    }
+
+    DebugPrint("Execuitn CAN: %d", msg->standardMessageID);
+
+    switch ((ICommsMessageLookUpIndex) msg->standardMessageID) {
+
+        case THROTTLE_DATA_ID:
+            ThrottleDataCallback(msg);
+            break;
+        case SPEED_DATA_ID:
+            SpeedDataCallback(msg);
+            break;
+        case MOTOR_RPM_DATA_ID:
+            MotorRPMDataCallback(msg);
+            break;
+        case EVENT_DATA_ID:
+            EventDataCallback(msg);
+            break;
+        case ERROR_DATA_ID:
+            ErrorDataCallback(msg);
+            break;
+        case CURRENT_VOLTAGE_DATA_ID:
+            CurrentVoltageDataCallback(msg);
+            break;
+        case LIGHT_DATA_ID:
+            LightsDataCallback(msg);
+            break;
+        case PRESSURE_TEMPERATURE_DATA_ID:
+            PressureTemperatureDataCallback(msg);
+            break;
+        case EFFICIENCY_DATA_ID:
+            EfficiencyDataCallback(msg);
+            break;
+        default:
+            DebugPrint("Ignoring CAN Msg: %d", msg->standardMessageID);
+    }
+}

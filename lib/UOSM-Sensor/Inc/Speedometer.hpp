@@ -27,8 +27,8 @@ private:
     volatile uint32_t clicks = 0;
 public:
     void collect() override{
-        printf("@%d | hallFrenquency: %d. Clicks: %d\n",osKernelGetTickCount(), hallFrequency, clicks);
         speed_t value = (uint32_t) (hallFrequency * 36 * HALL_CIRC) / (HALL_BOLTS);
+        printf("Speed: %d. Clicks: %lu\n", value, clicks);
         notify(value);
     }
 
