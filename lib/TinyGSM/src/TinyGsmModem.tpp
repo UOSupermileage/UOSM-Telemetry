@@ -115,7 +115,7 @@ class TinyGsmModem {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       thisModem().sendAT(GF(""));
       if (thisModem().waitResponse(200) == 1) { return true; }
-        rtos::ThisThread::sleep_for(std::chrono::milliseconds(100));
+        delay(100);
     }
     return false;
   }
@@ -168,7 +168,7 @@ class TinyGsmModem {
  protected:
   bool radioOffImpl() {
     if (!thisModem().setPhoneFunctionality(0)) { return false; }
-      rtos::ThisThread::sleep_for(std::chrono::milliseconds(3000));
+      delay(3000);
       return true;
   }
 

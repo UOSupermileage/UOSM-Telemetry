@@ -50,7 +50,7 @@ void CANExecute(iCommsMessage_t *msg) {
         return;
     }
 
-    DebugPrint("Execuitn CAN: %d", msg->standardMessageID);
+//    DebugPrint("Execuitn CAN: %d", msg->standardMessageID);
 
     switch ((ICommsMessageLookUpIndex) msg->standardMessageID) {
 

@@ -21,12 +21,12 @@ private:
         auto* args = (PollingSensorTaskArgs*) parameters;
 
         for(;;) {
-            printf("PollingSensorTask loop\n");
+//            printf("PollingSensorTask loop\n");
             args->collector->collect();
 
-            printf("Starting Thread Sleep for %d ms\n", args->pollingRate);
+//            printf("Starting Thread Sleep for %d ms\n", args->pollingRate);
             rtos::ThisThread::sleep_for(std::chrono::milliseconds(args->pollingRate));
-            printf("Ended Thread Sleep\n");
+//            printf("Ended Thread Sleep\n");
         }
     }
 

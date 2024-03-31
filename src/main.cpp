@@ -105,21 +105,71 @@ void StatusLightTask() {
 }
 
 #if LOGGER_IOT == 1
-static rtos::Thread iotThread(osPriorityLow);
+rtos::Thread iotThread(osPriorityHigh, 40960);
+
+void GetData(TinyGSMConnectionHandler* c) {
+    const char server[]   = "vsh.pp.ua";
+    const char resource[] = "/TinyGSM/logo.txt";
+
+    const int     port = 80;
+    DBG("Connecting to", server);
+    if (!c->getClient().connect(server, port)) {
+        DBG("... failed");
+    } else {
+        // Make a HTTP GET request:
+        c->getClient().print(String("GET ") + resource + " HTTP/1.0\r\n");
+        c->getClient().print(String("Host: ") + server + "\r\n");
+        c->getClient().print("Connection: close\r\n\r\n");
+
+        // Wait for data to arrive
+        uint32_t start = millis();
+        while (c->getClient().connected() &&
+               !c->getClient().available() &&
+               millis() - start < 30000L) {
+            osDelay(100);
+        };
+
+        // Read data
+        start = millis();
+        char logo[640] = {
+                '\0',
+        };
+        int read_chars = 0;
+        while (c->getClient().connected() && millis() - start < 10000L) {
+            while (c->getClient().available()) {
+                logo[read_chars] = c->getClient().read();
+                logo[read_chars + 1] = '\0';
+                read_chars++;
+                start = millis();
+            }
+        }
+        DebugPrint(logo);
+    }
+}
 
 void IotTask() {
-    CloudDatabase::instance.SetupThing();
     ArduinoIoTPreferredConnection = new TinyGSMConnectionHandler(Serial1, "", "LTEMOBILE.APN", "", "");
+
+    GetData(ArduinoIoTPreferredConnection);
+
+    CloudDatabase::instance.SetupThing();
     ArduinoCloud.begin(*ArduinoIoTPreferredConnection);
-    setDebugMessageLevel(2);
+    setDebugMessageLevel(4);
+    Debug.setDebugLevel(DBG_VERBOSE);
+    Debug.setDebugOutputStream(&Serial);
     ArduinoCloud.printDebugInfo();
 
     while (true) {
+
+//        GetData(ArduinoIoTPreferredConnection);
+
         CloudDatabase::instance.PeriodicUpdate();
+
 
         static bool isOn = false;
         digitalWrite(LEDB, isOn ? HIGH : LOW);
         isOn = !isOn;
+
         osDelay(50);
     }
 }
@@ -137,6 +187,8 @@ uint16_t pollingRate;
 // RTOS Execution Loops
 [[noreturn]] void CANTask() {
     pinMode(MCP2515_CS_PIN, OUTPUT);
+    pinMode(SPI_MISO, INPUT);
+
     SPI.begin();
     SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
 
@@ -165,7 +217,6 @@ uint16_t pollingRate;
         if (broadcast_voltage_current_counter++ > VOLTAGE_CURRENT_BROADCAST_RATE) {
             iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, CloudDatabase::instance.getBatteryVoltage(), CloudDatabase::instance.getBatteryCurrent());;
             result_t _ = IComms_Transmit(&txMsg);
-            printf("Broadcast voltage and current.");
             broadcast_voltage_current_counter = 0;
         }
 
@@ -173,7 +224,7 @@ uint16_t pollingRate;
         if (speedTxCounter > SPEED_BROADCAST_RATE) {
             iCommsMessage_t speedTxMsg = IComms_CreateUint32BitMessage(speedInfo->messageID, CloudDatabase::instance.getSpeed());
             result_t r = IComms_Transmit(&speedTxMsg);
-            printf("Sending Speed [%d] Result: %d\n", CloudDatabase::instance.getSpeed(), r);
+//            printf("Sending Speed [%d] Result: %d\n", CloudDatabase::instance.getSpeed(), r);
             speedTxCounter = 0;
         }
 
@@ -181,20 +232,20 @@ uint16_t pollingRate;
         if (efficiencyTxCounter > EFFICIENCY_BROADCAST_RATE) {
             lap_efficiencies_t efficiencies;
             CloudDatabase::instance.getLapEfficiencies(&efficiencies);
-            printf("Lap Efficiencies: %d %d %d %d\n", efficiencies.lap_0, efficiencies.lap_1, efficiencies.lap_2, efficiencies.lap_3);
+//            printf("Lap Efficiencies: %d %d %d %d\n", efficiencies.lap_0, efficiencies.lap_1, efficiencies.lap_2, efficiencies.lap_3);
             iCommsMessage_t efficiencyTxMsg = IComms_CreateEfficiencyMessage(efficiencyInfo->messageID, &efficiencies);
             result_t r = IComms_Transmit(&efficiencyTxMsg);
-            printf("Eff Transmission Result: %d", r);
+//            printf("Eff Transmission Result: %d", r);
 
             efficiencyTxCounter = 0;
         }
 
+#if SENSOR_BRAKES == 1
         brakesTxCounter++;
         if (brakesTxCounter > BRAKES_BROADCAST_RATE) {
 
             flag_status_t brakesEnabled = Clear;
 
-#if SENSOR_BRAKES == 1
             int brakesPinReading =  digitalRead(BRAKES_INPUT_PIN);//1; // analogRead(BRAKES_INPUT_PIN) > 500;
             float percentage = (float) (brakesPinReading) * 100;
             CloudDatabase::instance.updateBrakesPercentage(percentage);
@@ -206,13 +257,13 @@ uint16_t pollingRate;
             if (brakesPinReading) {
                 DebugPrint("Brakes Enabled");
             }
-#endif
-
             iCommsMessage_t brakesTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BRAKES_ENABLED, brakesPinReading == HIGH ? Set : Clear);
             result_t r = IComms_Transmit(&brakesTxMsg);
             printf("brakes r: %d", r);
             brakesTxCounter = 0;
         }
+#endif
+
 
         rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));
     }
@@ -296,7 +347,7 @@ void setup() {
     CloudDatabase::instance.updateBatteryVoltage(48);
 
     throttleSensor->addListener([](const percentage_t& newValue) {
-        printf("Throttle: %d", newValue);
+        Serial.print("Throttle: "); Serial.println(newValue);
         CloudDatabase::instance.updateThrottle(newValue);
     });
 #endif
@@ -363,11 +414,13 @@ void setup() {
     iotThread.start(mbed::callback(IotTask));
 #endif
 
-    statusLightThread.start(mbed::callback(StatusLightTask));
+//    statusLightThread.start(mbed::callback(StatusLightTask));
     printf("Setup Complete!\n");
 
     pinMode(LEDB, OUTPUT);
     pinMode(LEDG, OUTPUT);
+    digitalWrite(LEDG, HIGH);
+//    pinMode(LEDR, OUTPUT);
 }
 
 //const ICommsMessageInfo* speedInfo = CANMessageLookUpGetInfo(SPEED_DATA_ID);
@@ -496,7 +549,7 @@ void LightsDataCallback(iCommsMessage_t *msg) {
 
 void PressureTemperatureDataCallback(iCommsMessage_t *msg) {
 
-    DebugPrint("Received PressureTemperature");
+//    DebugPrint("Received PressureTemperature");
 
     int32 pressure, temperature;
     result_t r = IComms_ReadPressureTemperatureMessage(msg, &pressure, &temperature);

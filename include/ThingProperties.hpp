@@ -66,12 +66,8 @@ public:
     static CloudDatabase instance;
 
     void SetupThing() {
-        ArduinoCloud.setThingId(DEVICE_LOGIN_NAME);
-
-        ArduinoCloud.addProperty(accelerationX, READ, ON_CHANGE, NULL);
-        ArduinoCloud.addProperty(accelerationY, READ, ON_CHANGE, NULL);
-        ArduinoCloud.addProperty(accelerationZ, READ, ON_CHANGE, NULL);
-        ArduinoCloud.addProperty(canMessage, READ, ON_CHANGE, NULL);
+//        ArduinoCloud.setDeviceId(DEVICE_LOGIN_NAME);
+//        ArduinoCloud.setThingId(DEVICE_LOGIN_NAME);
         ArduinoCloud.addProperty(batteryCurrent, READ, ON_CHANGE, NULL);
         ArduinoCloud.addProperty(batteryVoltage, READ, ON_CHANGE, NULL);
         ArduinoCloud.addPropertyReal(motor.rpm, "motorRPM", READ, ON_CHANGE, NULL);
@@ -85,7 +81,7 @@ public:
     }
 
     void PeriodicUpdate() {
-        periodicMotorOn();
+//        periodicMotorOn();
         ArduinoCloud.update();
     }
 
