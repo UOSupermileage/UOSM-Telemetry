@@ -115,8 +115,8 @@ PUBLIC void IComms_PeriodicReceive() {
                 // DebugPrint("%s Executing callback", ICM_TAG);
                 // Execute callback for message
                 if (CANMessageLookUpTable[lookupTableIndex].numberOfBytes == rxMsg.dataLength) {
-//                    CANMessageLookUpTable[lookupTableIndex].canMessageCallback(&rxMsg);
-                    CANExecute(&rxMsg);
+                    CANMessageLookUpTable[lookupTableIndex].canMessageCallback(&rxMsg);
+//                    CANExecute(&rxMsg);
                 } else {
                     DebugPrint("%s message id [%x] has incorrect length of [%d]", ICM_TAG, rxMsg.standardMessageID, rxMsg.dataLength);
                 }

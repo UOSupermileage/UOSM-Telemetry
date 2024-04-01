@@ -52,7 +52,7 @@ void CANExecute(iCommsMessage_t *msg) {
 
 //    DebugPrint("Execuitn CAN: %d", msg->standardMessageID);
 
-    switch ((ICommsMessageLookUpIndex) msg->standardMessageID) {
+    switch (msg->standardMessageID) {
 
         case THROTTLE_DATA_ID:
             ThrottleDataCallback(msg);

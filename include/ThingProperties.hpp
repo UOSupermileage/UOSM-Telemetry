@@ -11,6 +11,9 @@
 #include "Mutex.hpp"
 #include "Secrets.h"
 #include <vector>
+#include <map>
+
+#define N_LAPS 4
 
 #define MOTOR_ON_TIMEOUT 500
 
@@ -37,10 +40,7 @@ struct GPSData {
 
 class CloudDatabase {
 private:
-    LapData a;
-    LapData b;
-    LapData c;
-    LapData d;
+    LapData laps[N_LAPS];
 
     CloudElectricCurrent batteryCurrent;
     current_t raw_batteryCurrent;
@@ -62,8 +62,16 @@ private:
     CloudFloat airSpeed;
     CloudPercentage brakesPercentage;
 
+    uint8_t currentLap;
+
 public:
     static CloudDatabase instance;
+
+    CloudDatabase() {
+        for (int i = 0; i < N_LAPS; i++) {
+            laps[i] = LapData();
+        }
+    }
 
     void SetupThing() {
 //        ArduinoCloud.setDeviceId(DEVICE_LOGIN_NAME);
@@ -121,7 +129,8 @@ public:
     void updateBatteryCurrent(current_t current) {
         raw_batteryCurrent = current;
         batteryCurrent = (float) current / 1000;
-        d.totalJoules += (uint64_t) raw_batteryVoltage * raw_batteryCurrent;
+
+        laps[min(currentLap, N_LAPS - 1)].totalJoules += (uint64_t) raw_batteryVoltage * raw_batteryCurrent;
     }
 
     void updateAcceleration(acceleration_t acceleration) {
@@ -169,20 +178,39 @@ public:
         throttle = (float) p / 10;
     }
 
-    void triggerLap() {
-        a = b;
-        b = c;
-        c = d;
-        d = LapData(0, 0);
+    void setLap(uint8_t count) {
+        if (count != currentLap && currentLap >= N_LAPS) {
+            // TODO, make this use N_LAPS Constant
+            laps[0] = laps[1];
+            laps[1] = laps[2];
+            laps[2] = laps[3];
+            laps[3] = LapData();
+        }
+
+        currentLap = count;
     }
 
     void getLapEfficiencies(lap_efficiencies_t* efficiencies) {
         if (efficiencies == nullptr) { return; }
 
-        efficiencies->lap_0 = a.totalJoules;
-        efficiencies->lap_1 = b.totalJoules;
-        efficiencies->lap_2 = c.totalJoules;
-        efficiencies->lap_3 = d.totalJoules;
+        uint8_t largest = 0;
+        for (int i = 0; i < N_LAPS; i++) {
+            if (laps[largest].totalJoules < laps[i].totalJoules) {
+                largest = i;
+            }
+        }
+
+        Serial.print("Largest: "); Serial.println(largest);
+        Serial.print("Largest Joules: "); Serial.println(laps[largest].totalJoules);
+
+        if (laps[largest].totalJoules == 0) {
+            laps[largest].totalJoules = 1;
+        }
+
+        efficiencies->lap_0 = (laps[0].totalJoules * 200) / laps[largest].totalJoules;
+        efficiencies->lap_1 = (laps[1].totalJoules * 200) / laps[largest].totalJoules;
+        efficiencies->lap_2 = (laps[2].totalJoules * 200) / laps[largest].totalJoules;
+        efficiencies->lap_3 = (laps[3].totalJoules * 200) / laps[largest].totalJoules;
     }
 };
 

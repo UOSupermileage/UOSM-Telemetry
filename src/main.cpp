@@ -15,6 +15,7 @@
 constexpr uint32_t serialBaudrate = 115200;
 constexpr uint8_t defaultBufferSize = 1;
 
+#define CAN_INTERUPT_PIN PG_7
 
 #if LOGGER_SD == 1
 #include "LoggerTask.hpp"
@@ -25,10 +26,11 @@ constexpr uint8_t defaultBufferSize = 1;
 #if INTERNET_CONNECTION == 1
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
 #elif INTERNET_CONNECTION == 2
+
 #include "TinyGSMConnectionHandler.hpp"
 #include "InternalCommsModule.h"
 
-TinyGSMConnectionHandler* ArduinoIoTPreferredConnection;
+TinyGSMConnectionHandler *ArduinoIoTPreferredConnection;
 #endif
 
 #if SENSOR_GPS == 1
@@ -47,10 +49,11 @@ PollingSensorTask<gps_coordinate_t>* gpsSensorTask;
 #endif
 
 #if SENSOR_VOLTAGE == 1 || SENSOR_CURRENT == 1
+
 #include "VoltageSensor.hpp"
 
-VoltageSensor* voltageSensor;
-PollingSensorTask<voltage_current_t >* voltageSensorTask;
+VoltageSensor *voltageSensor;
+PollingSensorTask<voltage_current_t> *voltageSensorTask;
 #endif
 
 #if SENSOR_ACCELEROMETER == 1
@@ -66,22 +69,24 @@ ValueSensor<CANLogEntry*>* canLogsSensor = new ValueSensor<CANLogEntry*>(default
 #endif
 
 #if SENSOR_THROTTLE == 1
-ValueSensor<percentage_t>* throttleSensor = new ValueSensor<percentage_t>();
+ValueSensor<percentage_t> *throttleSensor = new ValueSensor<percentage_t>();
 #endif
 
 #if SENSOR_SPEEDOMETER == 1
+
 #include "Speedometer.hpp"
 
 #define SPEEDOMETER_PIN 4
 
 void hallInterupt();
-Speedometer* speedometer;
-PollingSensorTask<speed_t>* speedometerTask;
+
+Speedometer *speedometer;
+PollingSensorTask<speed_t> *speedometerTask;
 
 #endif
 
 #if SENSOR_RPM == 1
-ValueSensor<velocity_t>* rpmSensor = new ValueSensor<velocity_t >();
+ValueSensor<velocity_t> *rpmSensor = new ValueSensor<velocity_t>();
 #endif
 
 static rtos::Thread statusLightThread;
@@ -222,6 +227,7 @@ uint16_t pollingRate;
 
         efficiencyTxCounter++;
         if (efficiencyTxCounter > EFFICIENCY_BROADCAST_RATE) {
+            Serial.println("Sending efficiencies.");
             lap_efficiencies_t efficiencies;
             CloudDatabase::instance.getLapEfficiencies(&efficiencies);
 //            printf("Lap Efficiencies: %d %d %d %d\n", efficiencies.lap_0, efficiencies.lap_1, efficiencies.lap_2, efficiencies.lap_3);
@@ -233,30 +239,29 @@ uint16_t pollingRate;
         }
 
 #if SENSOR_BRAKES == 1
-        brakesTxCounter++;
-        if (brakesTxCounter > BRAKES_BROADCAST_RATE) {
+            brakesTxCounter++;
+            if (brakesTxCounter > BRAKES_BROADCAST_RATE) {
 
-            flag_status_t brakesEnabled = Clear;
+                flag_status_t brakesEnabled = Clear;
 
-            int brakesPinReading =  digitalRead(BRAKES_INPUT_PIN);//1; // analogRead(BRAKES_INPUT_PIN) > 500;
-            float percentage = (float) (brakesPinReading) * 100;
-            CloudDatabase::instance.updateBrakesPercentage(percentage);
+                int brakesPinReading = digitalRead(BRAKES_INPUT_PIN);//1; // analogRead(BRAKES_INPUT_PIN) > 500;
+                float percentage = (float) (brakesPinReading) * 100;
+                CloudDatabase::instance.updateBrakesPercentage(percentage);
 
-            Serial.print("Brakes: ");
-            Serial.print(percentage);
-            Serial.println();
+                Serial.print("Brakes: ");
+                Serial.print(percentage);
+                Serial.println();
 
-            if (brakesPinReading) {
-                DebugPrint("Brakes Enabled");
+                if (brakesPinReading) {
+                    DebugPrint("Brakes Enabled");
+                }
+                iCommsMessage_t brakesTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BRAKES_ENABLED,
+                                                                        brakesPinReading == HIGH ? Set : Clear);
+                result_t r = IComms_Transmit(&brakesTxMsg);
+                printf("brakes r: %d", r);
+                brakesTxCounter = 0;
             }
-            iCommsMessage_t brakesTxMsg = IComms_CreateEventMessage(eventInfo->messageID, BRAKES_ENABLED, brakesPinReading == HIGH ? Set : Clear);
-            result_t r = IComms_Transmit(&brakesTxMsg);
-            printf("brakes r: %d", r);
-            brakesTxCounter = 0;
-        }
 #endif
-
-
         rtos::ThisThread::sleep_for(std::chrono::milliseconds(200));
     }
 }
@@ -288,15 +293,18 @@ void setup() {
 
 #if SENSOR_VOLTAGE == 1 || SENSOR_CURRENT == 1
     voltageSensor = new VoltageSensor(Wire, 0, 0x40);
-    voltageSensor->addListener([](const voltage_current_t & newValue) {
+    voltageSensor->addListener([](const voltage_current_t &newValue) {
         CloudDatabase::instance.updateBatteryVoltage(newValue.voltage);
-        Serial.print("Battery Voltage: "); Serial.println(newValue.voltage);
+        Serial.print("Battery Voltage: ");
+        Serial.println(newValue.voltage);
 
         CloudDatabase::instance.updateBatteryCurrent(newValue.current);
-        Serial.print("Battery Current: "); Serial.println(newValue.current);
+        Serial.print("Battery Current: ");
+        Serial.println(newValue.current);
     });
 
-    voltageSensorTask = new PollingSensorTask<voltage_current_t >(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, osPriorityNormal);
+    voltageSensorTask = new PollingSensorTask<voltage_current_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10,
+                                                                 osPriorityNormal);
 #endif
 
 #if SENSOR_ACCELEROMETER == 1
@@ -320,37 +328,39 @@ void setup() {
 #endif
 
 #if SENSOR_CAN_LOG == 1
-//    canLogsSensor->addListener([](const CANLogEntry* newValue) {
-//        // Print all received CAN messages to Serial
-//        CloudDatabase::instance.updateCanMessages(newValue->getMessage());
-//    });
+    //    canLogsSensor->addListener([](const CANLogEntry* newValue) {
+    //        // Print all received CAN messages to Serial
+    //        CloudDatabase::instance.updateCanMessages(newValue->getMessage());
+    //    });
 #endif
 
 #if SENSOR_THROTTLE == 1
-    throttleSensor->addListener([](const percentage_t& newValue) {
-        Serial.print("Throttle: "); Serial.println(newValue);
+    throttleSensor->addListener([](const percentage_t &newValue) {
+        Serial.print("Throttle: ");
+        Serial.println(newValue);
         CloudDatabase::instance.updateThrottle(newValue);
     });
 #endif
 
 #if SENSOR_RPM == 1
-    rpmSensor->addListener([](const velocity_t & newValue) {
+    rpmSensor->addListener([](const velocity_t &newValue) {
         CloudDatabase::instance.updateRPM(newValue);
     });
 #endif
 
 #if SENSOR_SPEEDOMETER == 1
+    pinMode(SPEEDOMETER_PIN, INPUT);
     speedometer = new Speedometer();
 
     if (digitalPinToInterrupt(SPEEDOMETER_PIN) != -1) {
-        attachInterrupt(SPEEDOMETER_PIN, hallInterupt, RISING);
+        attachInterrupt(digitalPinToInterrupt(SPEEDOMETER_PIN), hallInterupt, RISING);
     } else {
         while (true) {
             DebugPrint("Unsupported speedometer pin");
         }
     }
 
-    speedometer->addListener([](const speed_t& newValue) {
+    speedometer->addListener([](const speed_t &newValue) {
         CloudDatabase::instance.updateSpeed(newValue);
         printf("Speed: %d", newValue);
         printf("Speed: %d", newValue);
@@ -414,9 +424,11 @@ void loop() {
 }
 
 #if SENSOR_SPEEDOMETER == 1
+
 void hallInterupt() {
     speedometer->hallCallback();
 }
+
 #endif
 
 #include "CANMessageLookUpModule.h"
@@ -470,7 +482,7 @@ void ErrorDataCallback(iCommsMessage_t *msg) {
     }
 }
 
-void SpeedDataCallback(iCommsMessage_t *msg) { }
+void SpeedDataCallback(iCommsMessage_t *msg) {}
 
 /**
  * Listen for Event messages
@@ -479,14 +491,15 @@ void SpeedDataCallback(iCommsMessage_t *msg) { }
 void EventDataCallback(iCommsMessage_t *msg) {
     if (msg->dataLength == CANMessageLookUpTable[EVENT_DATA_ID].numberOfBytes) {
         auto code = (EventCode) msg->data[1];
-        auto status = (flag_status_t) msg->data[0];
+        uint8_t status = msg->data[0];
 
         switch (code) {
             case DEADMAN:
                 CloudDatabase::instance.updateMotorOn(status);
                 break;
             case NEW_LAP:
-                CloudDatabase::instance.triggerLap();
+                Serial.print("New Lap: "); Serial.println(status);
+                CloudDatabase::instance.setLap(status);
             default:
                 break;
         }
