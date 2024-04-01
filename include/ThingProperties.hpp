@@ -121,9 +121,6 @@ public:
     void updateBatteryCurrent(current_t current) {
         raw_batteryCurrent = current;
         batteryCurrent = (float) current / 1000;
-
-        DebugPrint("Current %d, Voltage %d\n", raw_batteryCurrent, raw_batteryVoltage);
-
         d.totalJoules += (uint64_t) raw_batteryVoltage * raw_batteryCurrent;
     }
 
@@ -183,7 +180,7 @@ public:
         if (efficiencies == nullptr) { return; }
 
         efficiencies->lap_0 = a.totalJoules;
-        efficiencies->lap_1 = 100;
+        efficiencies->lap_1 = b.totalJoules;
         efficiencies->lap_2 = c.totalJoules;
         efficiencies->lap_3 = d.totalJoules;
     }

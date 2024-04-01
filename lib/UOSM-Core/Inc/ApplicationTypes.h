@@ -83,6 +83,14 @@ typedef uint8_t brightness_t;
 typedef int32_t pressure_t;
 typedef int32_t temperature_t;
 
+typedef union {
+    uint32_t all;
+    struct {
+        uint32_t voltage: 16;
+        uint32_t current: 16;
+    };
+} voltage_current_t;
+
 typedef struct {
     uint16_t standardMessageID; // 11 bit max
     uint8_t dataLength;            // max 8

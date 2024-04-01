@@ -46,20 +46,11 @@ GPSSensor* gpsSensor;
 PollingSensorTask<gps_coordinate_t>* gpsSensorTask;
 #endif
 
-#if SENSOR_VOLTAGE == 1
+#if SENSOR_VOLTAGE == 1 || SENSOR_CURRENT == 1
 #include "VoltageSensor.hpp"
-#include "Arduino_PortentaBreakout.h"
 
 VoltageSensor* voltageSensor;
-PollingSensorTask<voltage_t>* voltageSensorTask;
-#endif
-
-#if SENSOR_CURRENT == 1
-#include "VoltageSensor.hpp"
-
-// The current sensor is just an ADS on the current sensor so it's technically a voltage reading that's extrapolated back into current output
-VoltageSensor* currentSensor;
-PollingSensorTask<voltage_t>* currentSensorTask;
+PollingSensorTask<voltage_current_t >* voltageSensorTask;
 #endif
 
 #if SENSOR_ACCELEROMETER == 1
@@ -215,8 +206,9 @@ uint16_t pollingRate;
         IComms_PeriodicReceive();
 
         if (broadcast_voltage_current_counter++ > VOLTAGE_CURRENT_BROADCAST_RATE) {
-            iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, CloudDatabase::instance.getBatteryVoltage(), CloudDatabase::instance.getBatteryCurrent());;
+            iCommsMessage_t txMsg = IComms_CreatePairUInt16BitMessage(voltageCurrentInfo->messageID, CloudDatabase::instance.getBatteryCurrent(), CloudDatabase::instance.getBatteryVoltage());;
             result_t _ = IComms_Transmit(&txMsg);
+            Serial.print("Sent voltage: "); Serial.println(CloudDatabase::instance.getBatteryVoltage());
             broadcast_voltage_current_counter = 0;
         }
 
@@ -294,26 +286,17 @@ void setup() {
     Wire.begin();
 #endif
 
-#if SENSOR_VOLTAGE == 1
-    voltageSensor = new VoltageSensor(Wire, VoltageSensor::VoltageSensorMode::Differential_0_1, 0, 0x40);
-    voltageSensor->addListener([](const voltage_t& newValue) {
-        float v = (newValue * 19.29) / 1000;
-        CloudDatabase::instance.updateBatteryVoltage(v);
-        printf("Voltage: %f", v);
-    });
-    // TODO: Combine both sensors into a single task to avoid reading too close in timing to each other
-//    voltageSensorTask = new PollingSensorTask<voltage_t>(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, osPriorityNormal);
-#else
-    CloudDatabase::instance.updateBatteryVoltage(48000);
-#endif
+#if SENSOR_VOLTAGE == 1 || SENSOR_CURRENT == 1
+    voltageSensor = new VoltageSensor(Wire, 0, 0x40);
+    voltageSensor->addListener([](const voltage_current_t & newValue) {
+        CloudDatabase::instance.updateBatteryVoltage(newValue.voltage);
+        Serial.print("Battery Voltage: "); Serial.println(newValue.voltage);
 
-#if SENSOR_CURRENT == 1
-    currentSensor = new VoltageSensor(Wire, VoltageSensor::VoltageSensorMode::Differential_2_3, 0, 0x40);
-    currentSensor->addListener([](const voltage_t& newValue) {
-        CloudDatabase::instance.updateBatteryCurrent(newValue / 12.5f);
-        printf("Current: %fA\n", newValue / 12.5f);
+        CloudDatabase::instance.updateBatteryCurrent(newValue.current);
+        Serial.print("Battery Current: "); Serial.println(newValue.current);
     });
-    currentSensorTask = new PollingSensorTask<voltage_t>(currentSensor, 200, "T_CurrentSensor", 1024 * 10, osPriorityNormal);
+
+    voltageSensorTask = new PollingSensorTask<voltage_current_t >(voltageSensor, 200, "T_VoltageSensor", 1024 * 10, osPriorityNormal);
 #endif
 
 #if SENSOR_ACCELEROMETER == 1
@@ -344,8 +327,6 @@ void setup() {
 #endif
 
 #if SENSOR_THROTTLE == 1
-    CloudDatabase::instance.updateBatteryVoltage(48);
-
     throttleSensor->addListener([](const percentage_t& newValue) {
         Serial.print("Throttle: "); Serial.println(newValue);
         CloudDatabase::instance.updateThrottle(newValue);

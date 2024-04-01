@@ -12,18 +12,18 @@
 
 #include "ADS1219.h"
 #include <SparkFun_ADS1219.h>
+#include "Config.h"
 
-class VoltageSensor: public Sensor<voltage_t> {
+class VoltageSensor: public Sensor<voltage_current_t> {
 public:
     enum class VoltageSensorMode: uint8_t { Differential_0_1, Differential_2_3 };
 private:
     ADS1219* ads;
-    VoltageSensorMode mode;
 
     bool initialized = false;
 
 public:
-    explicit VoltageSensor(TwoWire& i2c, VoltageSensorMode mode, uint8_t drdy_pin, uint16_t address): ads(new ADS1219(i2c, drdy_pin, address)), mode(mode) {
+    explicit VoltageSensor(TwoWire& i2c, uint8_t drdy_pin, uint16_t address): ads(new ADS1219(i2c, drdy_pin, address)) {
 
     }
 
@@ -48,15 +48,10 @@ public:
             }
         }
 
-        switch (mode) {
-            case VoltageSensorMode::Differential_0_1:
-                ads->set_input_mux(ADS1219_MUX::DIFF_P0_N1);
-                break;
-            case VoltageSensorMode::Differential_2_3:
-                ads->set_input_mux(ADS1219_MUX::DIFF_P2_N3);
-                break;
-        }
+        voltage_current_t results;
 
+#if SENSOR_VOLTAGE == 1
+        ads->set_input_mux(ADS1219_MUX::DIFF_P0_N1);
         if (ads->start()) {
             uint16_t timeout = 10;
             while (!ads->is_data_ready() && timeout-- > 0) {
@@ -68,11 +63,34 @@ public:
             }
 
             ads->read_conversion();
-            voltage_t voltage = (voltage_t) ads->get_millivolts(3300.0);
-            printf("Collected voltage (mV): %d\n", voltage);
 
-            notify(voltage);
+            // Multiply result by 19.29 to convert from ADC voltage to Battery voltage (Scaling voltage from 3.3 to larger range)
+            results.voltage = (voltage_t) ads->get_millivolts(3300.0) * 19.29;
         }
+#endif
+
+#if SENSOR_CURRENT == 1
+        ads->set_input_mux(ADS1219_MUX::DIFF_P2_N3);
+        if (ads->start()) {
+            uint16_t timeout = 10;
+            while (!ads->is_data_ready() && timeout-- > 0) {
+                osDelay(10);
+            }
+
+            if (timeout == 0) {
+                return;
+            }
+
+            ads->read_conversion();
+
+            // Divide by 12.5 to get number of milliamps from current sensor
+            Serial.print("Raw ads current: "); Serial.println(ads->get_raw());
+            Serial.println("ads current: "); Serial.println(ads->get_millivolts(3300));
+            results.current = ads->get_millivolts(3300.0) * 1000 / 12.5f;
+        }
+#endif
+
+        notify(results);
     }
 };
 
