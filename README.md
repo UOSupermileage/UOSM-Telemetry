@@ -2,7 +2,7 @@
 
 Project for the embedded software running on the UOSM 2023 Telemetry board.
 
-Currently uses an esp32-s3-devkitc-1
+Currently uses the Portenta H7
 
 ## Setup
 1. Install CLion
